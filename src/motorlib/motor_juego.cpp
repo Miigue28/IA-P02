@@ -158,11 +158,11 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
   case actRUN:
     monitor.get_entidad(1)->SetActionSent(actIDLE);
     posibleElAvance = monitor.getMapa()->EsPosibleCorrer(0, 2);
-    
+
     if (posibleElAvance != 0)
     { // No se ha podido avanzar.
       switch (posibleElAvance){
-        case 1: // Muro       
+        case 1: // Muro
           monitor.get_entidad(0)->seAostio();
           std::cout << "El jugador ha chocado con un muro\n";
           break;
@@ -175,17 +175,17 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
           monitor.setMostrarResultados(true);
         break;
 
-        case 3: // Colaborador       
+        case 3: // Colaborador
           monitor.get_entidad(0)->seAostio();
           std::cout << "El jugador ha chocado con el colaborador\n";
           break;
 
-        case 4: // aldeano       
+        case 4: // aldeano
           monitor.get_entidad(0)->seAostio();
           std::cout << "El jugador ha chocado con un aldeano\n";
           break;
 
-        case 5: // lobo       
+        case 5: // lobo
           monitor.get_entidad(0)->seAostio();
           std::cout << "El jugador ha chocado con un lobo\n";
           break;
@@ -369,11 +369,6 @@ bool actuacionNPC(unsigned int entidad, unsigned char celda, Action accion, unsi
     switch (accion)
     {
     case act_CLB_STOP:
-      if (celda == 'X')
-      { // Casilla Rosa (Recarga)
-        monitor.get_entidad(0)->increaseBateria(10);
-      }
-
       out = true;
       break;
 
@@ -438,7 +433,7 @@ bool actuacionNPC(unsigned int entidad, unsigned char celda, Action accion, unsi
             monitor.get_entidad(0)->incrMisiones();
             monitor.get_entidad(0)->incrPuntuacion(10);
             monitor.get_entidad(1)->SetActionSent(act_CLB_STOP);
-            monitor.get_entidad(1)->setLastAction(act_CLB_STOP);     
+            monitor.get_entidad(1)->setLastAction(act_CLB_STOP);
             monitor.get_entidad(0)->SetLlegoOn();
             monitor.get_entidad(1)->SetLlegoOn();
 
@@ -495,6 +490,7 @@ bool actuacionNPC(unsigned int entidad, unsigned char celda, Action accion, unsi
           monitor.get_entidad(1)->Cogio_Bikini(false);
           monitor.get_entidad(1)->Cogio_Zapatillas(false);
           monitor.get_entidad(1)->setLastAction(act_CLB_STOP);
+          monitor.get_entidad(1)->SetLlegoOn();
 
           // Opcion simplemente choca contra el lobo
           monitor.get_entidad(0)->perderPV(1);
@@ -688,7 +684,7 @@ void nucleo_motor_juego(MonitorJuego &monitor, int acc)
   if (monitor.get_entidad(0)->ready())
   {
 
-    monitor.init_casillas_especiales(monitor.get_entidad(0)->getFil(), monitor.get_entidad(0)->getCol());
+    monitor.init_casillas_especiales(monitor.get_entidad(0)->getFil(), monitor.get_entidad(0)->getCol(), monitor.get_entidad(1)->getFil(), monitor.get_entidad(1)->getCol());
 
     clock_t t0 = clock();
     accion = monitor.get_entidad(0)->think(acc, estado[0], monitor.getLevel());
