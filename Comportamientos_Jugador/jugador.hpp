@@ -5,15 +5,16 @@
 
 #include <list>
 #include <set>
+#include <queue>
 #include <algorithm>
 
-struct stateN0
+struct state
 {
     ubicacion jugador;
     ubicacion colaborador;
     Action ultimaOrdenColaborador;
 
-    bool operator==(const stateN0 & x) const
+    bool operator==(const state & x) const
     {
         // No tenemos en cuenta la orientación que tiene el colaborador
         if (jugador == x.jugador && colaborador.f == x.colaborador.f && colaborador.c == x.colaborador.c)
@@ -25,7 +26,7 @@ struct stateN0
 
 // Definición del tipo nodo del nivel 0
 struct nodeN0{
-	stateN0 st;
+	state st;
 	list<Action> secuencia;
 
 	bool operator==(const nodeN0 &n) const {
@@ -44,6 +45,56 @@ struct nodeN0{
 	}
 };
 
+// Definición del tipo nodo del nivel 1
+struct nodeN1
+{
+    state st;
+	list<Action> secuencia;
+    
+	bool operator==(const nodeN1 &n) const {
+		return (st == n.st);
+	}
+    bool operator<(const nodeN1 &b)  const {
+        if (st.jugador.f < b.st.jugador.f)
+            return true;
+        else if (st.jugador.f == b.st.jugador.f && st.jugador.c < b.st.jugador.c)
+            return true;
+        else if (st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula < b.st.jugador.brujula)
+            return true;
+        else if (st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula == b.st.jugador.brujula && st.colaborador.f < b.st.colaborador.f)
+            return true;
+        else if (st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula == b.st.jugador.brujula && st.colaborador.f == b.st.colaborador.f && st.colaborador.c < b.st.colaborador.c)
+            return true;
+        else if (st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula == b.st.jugador.brujula && st.colaborador.f == b.st.colaborador.f && st.colaborador.c == b.st.colaborador.c && st.colaborador.brujula < b.st.colaborador.brujula)
+            return true;
+        else
+            return false;
+	}
+};
+
+// Definición del tipo nodo del nivel 2
+struct nodeN2
+{
+    state st;
+	list<Action> secuencia;
+    int accumulated_cost;
+    
+	bool operator==(const nodeN2 &n) const {
+		return (st == n.st);
+	}
+    bool operator<(const nodeN2 &b)  const {
+        if (accumulated_cost < b.accumulated_cost)
+            return true;
+        else if (st.jugador.f < b.st.jugador.f)
+            return true;
+        else if (st.jugador.f == b.st.jugador.f && st.jugador.c < b.st.jugador.c)
+            return true;
+        else if (st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula < b.st.jugador.brujula)
+            return true;
+        else
+            return false;
+	}
+};
 
 class ComportamientoJugador : public Comportamiento {
   public:
@@ -60,11 +111,11 @@ class ComportamientoJugador : public Comportamiento {
     Action think(Sensores sensores);
     int interact(Action accion, int valor);
 
-    void VisualizaPlan(const stateN0 &st, const list<Action> &plan);
+    void VisualizaPlan(const state &st, const list<Action> &plan);
 
   private:
     // Declarar Variables de Estado
-    stateN0 current_state;
+    state current_state;
     ubicacion goal;
     list<Action> plan;
     bool hayPlan;
