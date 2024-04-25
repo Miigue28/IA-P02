@@ -12,6 +12,10 @@ struct state
 {
     ubicacion jugador;
     ubicacion colaborador;
+    bool bikini_j;
+    bool bikini_c;
+    bool zapatillas_j;
+    bool zapatillas_c;
     Action ultimaOrdenColaborador;
 
     bool operator==(const state & x) const
@@ -77,19 +81,23 @@ struct nodeN2
 {
     state st;
 	list<Action> secuencia;
-    int accumulated_cost;
+    int bateria;
     
 	bool operator==(const nodeN2 &n) const {
 		return (st == n.st);
 	}
     bool operator<(const nodeN2 &b)  const {
-        if (accumulated_cost < b.accumulated_cost)
+        if (bateria < b.bateria)
             return true;
-        else if (st.jugador.f < b.st.jugador.f)
+        else if (bateria == b.bateria && st.jugador.f < b.st.jugador.f)
             return true;
-        else if (st.jugador.f == b.st.jugador.f && st.jugador.c < b.st.jugador.c)
+        else if (bateria == b.bateria && st.jugador.f == b.st.jugador.f && st.jugador.c < b.st.jugador.c)
             return true;
-        else if (st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula < b.st.jugador.brujula)
+        else if (bateria == b.bateria && st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula < b.st.jugador.brujula)
+            return true;
+        else if (bateria == b.bateria && st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula < b.st.jugador.brujula && st.bikini_j)
+            return true;
+        else if (bateria == b.bateria && st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula < b.st.jugador.brujula && st.bikini_j && st.zapatillas_j)
             return true;
         else
             return false;

@@ -39,7 +39,7 @@ ubicacion nextSquare(const ubicacion & pos){
 	return next;
 }
 
-ubicacion applyLastAction(const state & st, const vector<vector<unsigned char>> & map)
+ubicacion applyLastAction(const state & st, const vector<vector<unsigned char>> & map, bool & bikini, bool & zapatillas)
 {
     ubicacion next_square, outcome = st.colaborador;
     switch (st.ultimaOrdenColaborador)
@@ -49,6 +49,10 @@ ubicacion applyLastAction(const state & st, const vector<vector<unsigned char>> 
             // Si la próxima casilla es transitable y no está ocupada por el jugador
 	    	if (accesibleSquare(next_square, map) && !(next_square.f == st.jugador.f && next_square.c == st.jugador.c))
             {
+                if (map[next_square.f][next_square.c] == 'K')
+                    bikini = true;
+                if (map[next_square.f][next_square.c] == 'D')
+                    zapatillas = true;
 	    		outcome = next_square;
 	    	}
         break;
@@ -78,12 +82,15 @@ state apply(const Action & a, const state & st, const vector<vector<unsigned cha
 	    case actWALK:
 	    	next_square = nextSquare(st.jugador);
             // Si la próxima casilla es transitable y no está ocupada por el colaborador
-	    	if (accesibleSquare(next_square, mapa) && 
-	    		!(next_square.f == st.colaborador.f && next_square.c == st.colaborador.c))
-                {
-	    			outcome.jugador = next_square;
-	    		}
-            outcome.colaborador = applyLastAction(st, mapa);
+	    	if (accesibleSquare(next_square, mapa) && !(next_square.f == st.colaborador.f && next_square.c == st.colaborador.c))
+            {
+                if (mapa[next_square.f][next_square.c] == 'K')
+                    outcome.bikini_j = true;
+                if (mapa[next_square.f][next_square.c] == 'D')
+                    outcome.zapatillas_j = true;
+	        	outcome.jugador = next_square;
+	        }
+            outcome.colaborador = applyLastAction(st, mapa, outcome.bikini_c, outcome.zapatillas_c);
 	    break;
 	    case actRUN:
 	    	next_square = nextSquare(st.jugador);
@@ -96,21 +103,25 @@ state apply(const Action & a, const state & st, const vector<vector<unsigned cha
 	    			outcome.jugador = after_next_square;
 	    		}
 	    	}
-            outcome.colaborador = applyLastAction(st, mapa);
+            outcome.colaborador = applyLastAction(st, mapa, outcome.bikini_c, outcome.zapatillas_c);
 	    break;
 	    case actTURN_L:
 	    	outcome.jugador.brujula = static_cast<Orientacion>((outcome.jugador.brujula+6)%8);
-            outcome.colaborador = applyLastAction(st, mapa);
+            outcome.colaborador = applyLastAction(st, mapa, outcome.bikini_c, outcome.zapatillas_c);
 	    break;
 	    case actTURN_SR:
 	    	outcome.jugador.brujula = static_cast<Orientacion>((outcome.jugador.brujula+1)%8);
-            outcome.colaborador = applyLastAction(st, mapa);
+            outcome.colaborador = applyLastAction(st, mapa, outcome.bikini_c, outcome.zapatillas_c);
 	    break;
         case act_CLB_WALK:
             next_square = nextSquare(st.colaborador);
             // Si la próxima casilla es transitable y no está ocupada por el jugador
 	    	if (accesibleSquare(next_square, mapa) && !(next_square.f == st.jugador.f && next_square.c == st.jugador.c))
             {
+                if (mapa[next_square.f][next_square.c] == 'K')
+                    outcome.bikini_c = true;
+                if (mapa[next_square.f][next_square.c] == 'D')
+                    outcome.zapatillas_c = true;
 	    		outcome.colaborador = next_square;
                 outcome.ultimaOrdenColaborador = act_CLB_WALK;
 	    	}
@@ -593,6 +604,50 @@ list<Action> ColaboratorBreadthFirstSearch(const state &inicio, const ubicacion 
 	return plan;
 }
 
+int actionCost(const Action & a, const state & st, const vector<vector<unsigned char>> & map)
+{
+    char square = map[st.jugador.f][st.jugador.c];
+    switch(a)
+    {
+        case actWALK:
+            switch(square)
+            {
+                case 'A': return (st.bikini_j ? 10 : 100); break;
+                case 'B': return (st.zapatillas_j ? 15 : 50); break;
+                case 'T': return 2; break;
+                default: return 1; break;
+            }
+        break;
+        case actRUN:
+            switch(square)
+            {
+                case 'A': return (st.bikini_j ? 15 : 150); break;
+                case 'B': return (st.zapatillas_j ? 25 : 75); break;
+                case 'T': return 3; break;
+                default: return 1; break;
+            }
+        break;
+        case actTURN_L:
+            switch(square)
+            {
+                case 'A': return (st.bikini_j ? 5 : 30); break;
+                case 'B': return (st.zapatillas_j ? 1 : 7); break;
+                case 'T': return 2; break;
+                default: return 1; break;
+            }
+        break;
+        case actTURN_SR:
+            switch(square)
+            {
+                case 'A': return (st.bikini_j ? 5 : 10); break;
+                case 'B': return (st.zapatillas_j ? 1 : 5); break;
+                case 'T': return 1; break;
+                default: return 1; break;
+            }
+        break;
+    }
+}
+
 /**
  * @brief Algoritmo de búsqueda en anchura para el colaborador
  * @param inicio 
@@ -600,7 +655,7 @@ list<Action> ColaboratorBreadthFirstSearch(const state &inicio, const ubicacion 
  * @param mapa 
  * @return 
  */
-list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa)
+list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa, int battery)
 {
 	nodeN2 current_node;
 	priority_queue<nodeN2> frontier;
@@ -608,25 +663,29 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
     list<Action> plan;
 
     current_node.st = inicio;
-    bool SolutionFound = (current_node.st.jugador.f == final.f && current_node.st.jugador.c == final.c);
+    current_node.bateria = battery;
+    
+    bool solution_found = (current_node.st.jugador.f == final.f && current_node.st.jugador.c == final.c);
 
 	frontier.push(current_node);
 
-	while (!frontier.empty() && !SolutionFound)
+	while (!frontier.empty() && !solution_found)
     {
 		frontier.pop();
         explored.insert(current_node);
 
         // TODO Comprobar si es solucion cuando lo popeamos de la cola
-
+        if (current_node.st.jugador.f == final.f && current_node.st.jugador.c == final.c)
+            solution_found = true;
 
 
         // TODO Actualizar los costes acumulados de los nodos
-		if (!SolutionFound)
+		if (!solution_found)
         {
             // Generar hijo actWALK
             nodeN2 child_walk = current_node;
             child_walk.st = apply(actWALK, current_node.st, mapa);
+            child_walk.bateria -= actionCost(actWALK, current_node.st, mapa);
             child_walk.secuencia.push_back(actWALK);
 		    if (explored.find(child_walk) == explored.end())
             {
@@ -635,6 +694,7 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
 			// Generar hijo actRUN
 			nodeN2 child_run = current_node;
             child_run.st = apply(actRUN, current_node.st, mapa);
+            child_walk.bateria -= actionCost(actRUN, current_node.st, mapa);
             child_run.secuencia.push_back(actRUN);
 			if (explored.find(child_run) == explored.end())
             {
@@ -643,6 +703,7 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
             // Generar hijo actTURN_L
 			nodeN2 child_turnl = current_node;
             child_turnl.st = apply(actTURN_L, current_node.st, mapa);
+            child_walk.bateria -= actionCost(actTURN_L, current_node.st, mapa);
             child_turnl.secuencia.push_back(actTURN_L);
 			if (explored.find(child_turnl) == explored.end())
             {
@@ -651,6 +712,7 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
 			// Generar hijo actTURN_SR
 			nodeN2 child_turnsr = current_node;
             child_turnsr.st = apply(actTURN_SR, current_node.st, mapa);
+            child_walk.bateria -= actionCost(actTURN_SR, current_node.st, mapa);
             child_turnsr.secuencia.push_back(actTURN_SR);
 			if (explored.find(child_turnsr) == explored.end())
             {
@@ -659,7 +721,7 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
 		}
 
         // TODO ¿Es así cómo evitamos los repetidos en abiertos?
-		if (!SolutionFound && !frontier.empty())
+		if (!solution_found && !frontier.empty())
         {
             current_node = frontier.top();
             while (!frontier.empty() && explored.find(current_node) != explored.end())
@@ -669,9 +731,14 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
                     current_node = frontier.top();
             }
         }
+
+        // TODO Cuando no podemos avanzar (nos quedamos en la misma
+        // posición por la función apply) ese estado se mete en abiertos
+        // igualmente y luego supongo que es descartado al tener en
+        // cuenta los repetidos
 			
 	}
-    if (SolutionFound)
+    if (solution_found)
     {
         plan = current_node.secuencia;
         cout << "Encontrado un plan: ";
@@ -709,6 +776,7 @@ Action ComportamientoJugador::think(Sensores sensores)
                     plan = ColaboratorBreadthFirstSearch(current_state, goal, mapaResultado);
                 break;
                 case 2:
+                    plan = AgentUniformCostSearch(current_state, goal, mapaResultado, sensores.bateria);
                 break;
                 case 3:
                 break;
