@@ -33,7 +33,9 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
 
   if (gasto > monitor.get_entidad(0)->getBateria())
   {
+    cout << "La batería necesaria para las acciones seleccionadas superó a la batería disponible\n";
     monitor.get_entidad(0)->setBateria(0);
+    
     return false;
   }
 
@@ -94,6 +96,7 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
       if (monitor.get_entidad(0)->isMemberObjetivo(x, y) != -1 and monitor.get_entidad(0)->allLessOneObjetivosAlcanzados())
       {
         // acaba de completar todos los objetivos.
+        cout << "-----> Casilla objetivo alcanzada por el jugador\n";
         monitor.get_entidad(0)->setCompletoLosObjetivos();
         if (monitor.getLevel() == 4)
         {
@@ -106,12 +109,15 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
             monitor.get_entidad(i)->setObjetivos(monitor.get_active_objetivos());
           }
         }
-        /*else if (monitor.getLevel() == 0 or monitor.getLevel() == 2)
+        else if (monitor.getLevel() == 0 or monitor.getLevel() == 2)
         {
           // El jugador llegó a la casilla objetivo.
           monitor.finalizarJuego();
           monitor.setMostrarResultados(true);
-        }*/
+        }
+        else {
+          cout << "-----> En este nivel es el COLABORADOR el que debe llegar a la casilla objetivo\n";
+        }
       }
       // monitor.get_entidad(0)->fixBateria_sig_accion(celdaJ_inicial, accion);
     }
@@ -232,6 +238,7 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
       }
       if (monitor.get_entidad(0)->isMemberObjetivo(x, y) != -1 and monitor.get_entidad(0)->allLessOneObjetivosAlcanzados())
       {
+        cout << "-----> Casilla objetivo alcanzada por el jugador\n";
         // acaba de completar todos los objetivos.
         monitor.get_entidad(0)->setCompletoLosObjetivos();
         if (monitor.getLevel() == 4)
@@ -245,12 +252,16 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
             monitor.get_entidad(i)->setObjetivos(monitor.get_active_objetivos());
           }
         }
-        /*else if (monitor.getLevel() == 0 or monitor.getLevel() == 2)
+        else if (monitor.getLevel() == 0 or monitor.getLevel() == 2)
         {
           // El jugador llegó a la casilla objetivo.
           monitor.finalizarJuego();
           monitor.setMostrarResultados(true);
-        }*/
+        }
+        else {
+          cout << "-----> En este nivel es el COLABORADOR el que debe llegar a la casilla objetivo\n";
+        }
+
       }
     }
     break;
@@ -442,12 +453,16 @@ bool actuacionNPC(unsigned int entidad, unsigned char celda, Action accion, unsi
               monitor.get_entidad(i)->setObjetivos(monitor.get_active_objetivos());
             }
           }
-          /*else if (monitor.getLevel() == 1 or monitor.getLevel() == 3)
+          else if (monitor.getLevel() == 1 or monitor.getLevel() == 3)
           {
-            // El jugador llegó a la casilla objetivo.
+            // El colaborador llegó a la casilla objetivo.
+            cout << "-----> Casilla Objetivo alcanzada por el colaborador\n";
             monitor.finalizarJuego();
             monitor.setMostrarResultados(true);
-          }*/
+          }
+        else {
+          cout << "-----> En este nivel es el JUGADOR el que debe llegar a la casilla objetivo\n";
+        }
         }
       }
 
