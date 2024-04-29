@@ -116,9 +116,21 @@ state apply(const Action & a, const state & st, const vector<vector<unsigned cha
 	    		after_next_square = nextSquare(next_square);
 	    		if (accesibleSquare(after_next_square, mapa) && !(after_next_square.f == st.colaborador.f && after_next_square.c == st.colaborador.c))
                 {
+                    if (mapa[after_next_square.f][after_next_square.c] == 'K')
+                    {
+                        outcome.bikini_j = true;
+                        if (outcome.zapatillas_j)
+                            outcome.zapatillas_j = false;
+                    }
+                    if (mapa[after_next_square.f][after_next_square.c] == 'D')
+                    {
+                        outcome.zapatillas_j = true;
+                        if (outcome.bikini_j)
+                            outcome.bikini_j = false;
+                    }
 	    			outcome.jugador = after_next_square;
+                    outcome.colaborador = applyLastAction(st, mapa, outcome.bikini_c, outcome.zapatillas_c);
 	    		}
-                outcome.colaborador = applyLastAction(st, mapa, outcome.bikini_c, outcome.zapatillas_c);
 	    	}
 	    break;
 	    case actTURN_L:
@@ -713,7 +725,7 @@ int actionCost(const Action & a, const state & st, const vector<vector<unsigned 
  * @param mapa 
  * @return 
  */
-list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa, int battery)
+list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final, const vector<vector<unsigned char>> &map)
 {
 	nodeN2 current_node;
 	priority_queue<nodeN2> frontier;
@@ -742,8 +754,8 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
         {
             // Generar hijo actWALK
             nodeN2 child_walk = current_node;
-            child_walk.accumulated_cost += actionCost(actWALK, current_node.st, mapa, player);
-            child_walk.st = apply(actWALK, current_node.st, mapa);
+            child_walk.accumulated_cost += actionCost(actWALK, current_node.st, map, player);
+            child_walk.st = apply(actWALK, current_node.st, map);
             child_walk.secuencia.push_back(actWALK);
 		    if (explored.find(child_walk.st) == explored.end())
             {
@@ -751,8 +763,8 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
 		    }
 			// Generar hijo actRUN
 			nodeN2 child_run = current_node;
-            child_run.accumulated_cost += actionCost(actRUN, current_node.st, mapa, player);
-            child_run.st = apply(actRUN, current_node.st, mapa);
+            child_run.accumulated_cost += actionCost(actRUN, current_node.st, map, player);
+            child_run.st = apply(actRUN, current_node.st, map);
             child_run.secuencia.push_back(actRUN);
 			if (explored.find(child_run.st) == explored.end())
             {
@@ -760,8 +772,8 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
 			}
             // Generar hijo actTURN_L
 			nodeN2 child_turnl = current_node;
-            child_turnl.accumulated_cost += actionCost(actTURN_L, current_node.st, mapa, player);
-            child_turnl.st = apply(actTURN_L, current_node.st, mapa);
+            child_turnl.accumulated_cost += actionCost(actTURN_L, current_node.st, map, player);
+            child_turnl.st = apply(actTURN_L, current_node.st, map);
             child_turnl.secuencia.push_back(actTURN_L);
 			if (explored.find(child_turnl.st) == explored.end())
             {
@@ -769,8 +781,8 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
 			}		
 			// Generar hijo actTURN_SR
 			nodeN2 child_turnsr = current_node;
-            child_turnsr.accumulated_cost += actionCost(actTURN_SR, current_node.st, mapa, player);
-            child_turnsr.st = apply(actTURN_SR, current_node.st, mapa);
+            child_turnsr.accumulated_cost += actionCost(actTURN_SR, current_node.st, map, player);
+            child_turnsr.st = apply(actTURN_SR, current_node.st, map);
             child_turnsr.secuencia.push_back(actTURN_SR);
 			if (explored.find(child_turnsr.st) == explored.end())
             {
@@ -807,8 +819,9 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
 }
 
 // DISTANCIA DE CHEBYSHOV
-int heuristic(const ubicacion & u, const ubicacion & goal)
+int heuristicCost(const state & st, const ubicacion & goal)
 {
+    ubicacion u = st.colaborador;
     return max(abs(goal.f - u.f), abs(goal.c - u.c));
 }
 
@@ -819,17 +832,22 @@ int heuristic(const ubicacion & u, const ubicacion & goal)
  * @param mapa 
  * @return 
  */
-list<Action> ColaboratorAStarSearch(const state &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa)
+list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, const vector<vector<unsigned char>> &map)
 {
 	nodeN3 current_node;
 	priority_queue<nodeN3> frontier;
-	set<nodeN3> explored;
+	set<state> explored;
     list<Action> plan;
 
-    current_node.st = inicio;
-    current_node.cost = 0;
-    
-    bool solution_found = (current_node.st.jugador.f == final.f && current_node.st.jugador.c == final.c);
+    current_node.st = start;
+    current_node.accumulated_cost = heuristicCost(current_node.st, goal);
+    current_node.st.ultimaOrdenColaborador = act_CLB_STOP;
+
+    // La heurística se añade antes de ejecutar la acción o despues????
+
+    // No estoy yo muy seguro de si el set es de state
+
+    bool solution_found = (current_node.st.colaborador.f == goal.f && current_node.st.colaborador.c == goal.c);
     bool player = true;
     bool colaborator = false;
 
@@ -838,113 +856,112 @@ list<Action> ColaboratorAStarSearch(const state &inicio, const ubicacion &final,
 	while (!frontier.empty() && !solution_found)
     {
 		frontier.pop();
-        explored.insert(current_node);
+        explored.insert(current_node.st);
 
-        // TODO Comprobar si es solucion cuando lo popeamos de la cola
-        if (current_node.st.jugador.f == final.f && current_node.st.jugador.c == final.c)
-            solution_found = true;
-
-
-        // Generar hijo actWALK
-        nodeN3 child_walk = current_node;
-        child_walk.st = apply(actWALK, current_node.st, mapa);
-        child_walk.cost += actionCost(actWALK, current_node.st, mapa, player);
-        child_walk.secuencia.push_back(actWALK);
-        if (child_walk.st.colaborador.f == final.f && child_walk.st.colaborador.c == final.c)
+        if (current_node.st.colaborador.f == goal.f && current_node.st.colaborador.c == goal.c)
         {
-			current_node = child_walk;
 			solution_found = true;
 		}
-		else if (explored.find(child_walk) == explored.end())
-        {
-			frontier.push(child_walk);
-		}
+        
 		if (!solution_found)
         {
+            // Generar hijo actWALK
+            nodeN3 child_walk = current_node;
+            child_walk.accumulated_cost += actionCost(actWALK, current_node.st, map, player);
+            child_walk.st = apply(actWALK, current_node.st, map);
+            child_walk.accumulated_cost += heuristicCost(child_walk.st, goal);
+            child_walk.secuencia.push_back(actWALK);
+            if (explored.find(child_walk.st) == explored.end())
+            {
+		    	frontier.push(child_walk);
+		    }
             // Generar hijo actRUN
 		    nodeN3 child_run = current_node;
-            child_run.st = apply(actRUN, current_node.st, mapa);
-            child_run.cost += actionCost(actRUN, current_node.st, mapa, player);
+            child_run.accumulated_cost += actionCost(actRUN, current_node.st, map, player);
+            child_run.st = apply(actRUN, current_node.st, map);
+            child_run.accumulated_cost += heuristicCost(child_run.st, goal);
             child_run.secuencia.push_back(actRUN);
-		    if (explored.find(child_run) == explored.end())
+		    if (explored.find(child_run.st) == explored.end())
             {
 		    	frontier.push(child_run);
 		    }
 		    // Generar hijo actTURN_L
 		    nodeN3 child_turnl = current_node;
-            child_turnl.st = apply(actTURN_L, current_node.st, mapa);
-            child_turnl.cost += actionCost(actTURN_L, current_node.st, mapa, player);
+            child_turnl.accumulated_cost += actionCost(actTURN_L, current_node.st, map, player);
+            child_turnl.st = apply(actTURN_L, current_node.st, map);
+            child_turnl.accumulated_cost += heuristicCost(child_turnl.st, goal);
             child_turnl.secuencia.push_back(actTURN_L);
-            if (explored.find(child_turnl) == explored.end())
+            if (explored.find(child_turnl.st) == explored.end())
             {
 		    	frontier.push(child_turnl);
 		    }		
 		    // Generar hijo actTURN_SR
 		    nodeN3 child_turnsr = current_node;
-            child_turnsr.st = apply(actTURN_SR, current_node.st, mapa);
-            child_turnsr.cost += actionCost(actTURN_SR, current_node.st, mapa, player);
+            child_turnsr.accumulated_cost += actionCost(actTURN_SR, current_node.st, map, player);
+            child_turnsr.st = apply(actTURN_SR, current_node.st, map);
+            child_turnsr.accumulated_cost += heuristicCost(child_turnsr.st, goal);
             child_turnsr.secuencia.push_back(actTURN_SR);
-            if (explored.find(child_turnsr) == explored.end())
+            if (explored.find(child_turnsr.st) == explored.end())
             {
 		    	frontier.push(child_turnsr);
 		    }
-        }
-
-        if (colaboratorInSight(current_node.st.jugador, current_node.st.colaborador, current_node.st.jugador.brujula))
-        {
-		    // Generar hijo act_CLB_WALK
-		    nodeN3 child_clbwalk = current_node;
-            child_clbwalk.st = apply(act_CLB_WALK, current_node.st, mapa);
-            child_clbwalk.cost += actionCost(act_CLB_WALK, current_node.st, mapa, colaborator);
-            child_clbwalk.secuencia.push_back(act_CLB_WALK);
-		    if (child_clbwalk.st.colaborador.f == final.f && child_clbwalk.st.colaborador.c == final.c)
+            if (current_node.st.ultimaOrdenColaborador != act_CLB_STOP)
             {
-		    	current_node = child_clbwalk;
-		    	solution_found = true;
-		    }
-		    else if (explored.find(child_clbwalk) == explored.end())
+                nodeN3 child_idle = current_node;
+                child_idle.accumulated_cost += actionCost(actIDLE, current_node.st, map, player);
+                child_idle.st = apply(actIDLE, current_node.st, map);
+                child_idle.accumulated_cost += heuristicCost(child_idle.st, goal);
+                child_idle.secuencia.push_back(actIDLE);
+                if (explored.find(child_idle.st) == explored.end())
+                {
+                    frontier.push(child_idle);
+                }
+            }
+            if (colaboratorInSight(current_node.st.jugador, current_node.st.colaborador, current_node.st.jugador.brujula))
             {
-		    	frontier.push(child_clbwalk);
-		    }
-            if (!solution_found)
-            {
+		        // Generar hijo act_CLB_WALK
+		        nodeN3 child_clbwalk = current_node;
+                child_clbwalk.accumulated_cost += actionCost(act_CLB_WALK, current_node.st, map, colaborator);
+                child_clbwalk.st = apply(act_CLB_WALK, current_node.st, map);
+                child_clbwalk.accumulated_cost += heuristicCost(child_clbwalk.st, goal);
+                child_clbwalk.secuencia.push_back(act_CLB_WALK);
+		        if (explored.find(child_clbwalk.st) == explored.end())
+                {
+		        	frontier.push(child_clbwalk);
+		        }
                 // Generar hijo act_CLB_TURN_SR
 		        nodeN3 child_clbturn = current_node;
-                child_clbturn.st = apply(act_CLB_TURN_SR, current_node.st, mapa);
-                child_clbturn.cost += actionCost(act_CLB_TURN_SR, current_node.st, mapa, colaborator);
-                child_clbturn.secuencia.push_back(actTURN_L);
-		        if (explored.find(child_clbturn) == explored.end())
+                child_clbturn.accumulated_cost += actionCost(act_CLB_TURN_SR, current_node.st, map, colaborator);
+                child_clbturn.st = apply(act_CLB_TURN_SR, current_node.st, map);
+                child_clbturn.accumulated_cost += heuristicCost(child_clbturn.st, goal);
+                child_clbturn.secuencia.push_back(act_CLB_TURN_SR);
+		        if (explored.find(child_clbturn.st) == explored.end())
                 {
 		        	frontier.push(child_clbturn);
 		        }		
 		        // Generar hijo act_CLB_STOP
 		        nodeN3 child_clbstop = current_node;
-                child_clbstop.st = apply(act_CLB_STOP, current_node.st, mapa);
-                child_clbstop.cost += actionCost(act_CLB_STOP, current_node.st, mapa, colaborator);
+                child_clbstop.accumulated_cost += actionCost(act_CLB_STOP, current_node.st, map, colaborator);
+                child_clbstop.st = apply(act_CLB_STOP, current_node.st, map);
+                child_clbstop.accumulated_cost += heuristicCost(child_clbstop.st, goal);
                 child_clbstop.secuencia.push_back(act_CLB_STOP);
-		        if (explored.find(child_clbstop) == explored.end())
+		        if (explored.find(child_clbstop.st) == explored.end())
                 {
 		        	frontier.push(child_clbstop);
 		        }
-            }
-		}
+		    }
+        }
 
-        // TODO ¿Es así cómo evitamos los repetidos en abiertos?
 		if (!solution_found && !frontier.empty())
         {
             current_node = frontier.top();
-            while (!frontier.empty() && explored.find(current_node) != explored.end())
+            while (!frontier.empty() && explored.find(current_node.st) != explored.end())
             {
                 frontier.pop();
                 if (!frontier.empty())
                     current_node = frontier.top();
             }
         }
-
-        // TODO Cuando no podemos avanzar (nos quedamos en la misma
-        // posición por la función apply) ese estado se mete en abiertos
-        // igualmente y luego supongo que es descartado al tener en
-        // cuenta los repetidos
 			
 	}
     if (solution_found)
@@ -972,6 +989,11 @@ Action ComportamientoJugador::think(Sensores sensores)
             current_state.colaborador.f = sensores.CLBposF;
             current_state.colaborador.c = sensores.CLBposC;
             current_state.colaborador.brujula = sensores.CLBsentido;
+            current_state.bikini_j = false;
+            current_state.zapatillas_j = false;
+            current_state.bikini_c = false;
+            current_state.zapatillas_c = false;
+            current_state.ultimaOrdenColaborador = act_CLB_STOP;
 
             goal.f = sensores.destinoF;
             goal.c = sensores.destinoC;
@@ -985,7 +1007,7 @@ Action ComportamientoJugador::think(Sensores sensores)
                     plan = ColaboratorBreadthFirstSearch(current_state, goal, mapaResultado);
                 break;
                 case 2:
-                    plan = AgentUniformCostSearch(current_state, goal, mapaResultado, sensores.bateria);
+                    plan = AgentUniformCostSearch(current_state, goal, mapaResultado);
                 break;
                 case 3:
                     plan = ColaboratorAStarSearch(current_state, goal, mapaResultado);

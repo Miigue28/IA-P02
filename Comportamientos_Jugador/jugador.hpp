@@ -38,6 +38,16 @@ struct state
             return true;
         else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j && zapatillas_j < b.zapatillas_j)
             return true;
+        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j && zapatillas_j == b.zapatillas_j && colaborador.f < b.colaborador.f)
+            return true;
+        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c < b.colaborador.c)
+            return true;
+        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c == b.colaborador.c && colaborador.brujula < b.colaborador.brujula)
+            return true;
+        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c == b.colaborador.c && colaborador.brujula == b.colaborador.brujula && bikini_c < b.bikini_c)
+            return true;
+        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c == b.colaborador.c && colaborador.brujula == b.colaborador.brujula && bikini_c == b.bikini_c && zapatillas_c < b.zapatillas_c)
+            return true;
         else
             return false;
     }
@@ -118,36 +128,13 @@ struct nodeN3
 {
     state st;
 	list<Action> secuencia;
-    int cost;
+    int accumulated_cost;
     
 	bool operator==(const nodeN3 &n) const {
 		return (st == n.st);
 	}
     bool operator<(const nodeN3 &b)  const {
-        if (cost > b.cost)
-            return true;
-        else if (cost == b.cost && st.jugador.f < b.st.jugador.f)
-            return true;
-        else if (cost == b.cost && st.jugador.f == b.st.jugador.f && st.jugador.c < b.st.jugador.c)
-            return true;
-        else if (cost == b.cost && st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula < b.st.jugador.brujula)
-            return true;
-        else if (cost == b.cost && st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula == b.st.jugador.brujula && st.colaborador.f < b.st.colaborador.f)
-            return true;
-        else if (cost == b.cost && st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula == b.st.jugador.brujula && st.colaborador.f == b.st.colaborador.f && st.colaborador.c < b.st.colaborador.c)
-            return true;
-        else if (cost == b.cost && st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula == b.st.jugador.brujula && st.colaborador.f == b.st.colaborador.f && st.colaborador.c == b.st.colaborador.c && st.colaborador.brujula < b.st.colaborador.brujula)
-            return true;
-        else if (cost == b.cost && st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula == b.st.jugador.brujula && st.colaborador.f == b.st.colaborador.f && st.colaborador.c == b.st.colaborador.c && st.colaborador.brujula == b.st.colaborador.brujula && st.bikini_j)
-            return true;
-        else if (cost == b.cost && st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula == b.st.jugador.brujula && st.colaborador.f == b.st.colaborador.f && st.colaborador.c == b.st.colaborador.c && st.colaborador.brujula == b.st.colaborador.brujula && st.bikini_j && st.zapatillas_j)
-            return true;
-        else if (cost == b.cost && st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula == b.st.jugador.brujula && st.colaborador.f == b.st.colaborador.f && st.colaborador.c == b.st.colaborador.c && st.colaborador.brujula == b.st.colaborador.brujula && st.bikini_j && st.zapatillas_j && st.bikini_c)
-            return true;
-        else if (cost == b.cost && st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula == b.st.jugador.brujula && st.colaborador.f == b.st.colaborador.f && st.colaborador.c == b.st.colaborador.c && st.colaborador.brujula == b.st.colaborador.brujula && st.bikini_j && st.zapatillas_j && st.bikini_c && st.zapatillas_c)
-            return true;
-        else
-            return false;
+        return (accumulated_cost > b.accumulated_cost);
 	}
 };
 
