@@ -105,7 +105,11 @@ state apply(const Action & a, const state & st, const vector<vector<unsigned cha
                         outcome.bikini_j = false;
                 }
 	        	outcome.jugador = next_square;
-                outcome.colaborador = applyLastAction(st, mapa, outcome.bikini_c, outcome.zapatillas_c);
+                outcome.colaborador = applyLastAction(outcome, mapa, outcome.bikini_c, outcome.zapatillas_c);
+                if (outcome.colaborador == st.colaborador and outcome.ultimaOrdenColaborador == act_CLB_WALK)
+                {
+                    outcome = st;
+                }
 	        }
 	    break;
 	    case actRUN:
@@ -129,20 +133,36 @@ state apply(const Action & a, const state & st, const vector<vector<unsigned cha
                             outcome.bikini_j = false;
                     }
 	    			outcome.jugador = after_next_square;
-                    outcome.colaborador = applyLastAction(st, mapa, outcome.bikini_c, outcome.zapatillas_c);
+                    outcome.colaborador = applyLastAction(outcome, mapa, outcome.bikini_c, outcome.zapatillas_c);
+                    if (outcome.colaborador == st.colaborador && outcome.ultimaOrdenColaborador == act_CLB_WALK)
+                    {
+                        outcome = st;
+                    }
 	    		}
 	    	}
 	    break;
 	    case actTURN_L:
 	    	outcome.jugador.brujula = static_cast<Orientacion>((outcome.jugador.brujula+6)%8);
-            outcome.colaborador = applyLastAction(st, mapa, outcome.bikini_c, outcome.zapatillas_c);
+            outcome.colaborador = applyLastAction(outcome, mapa, outcome.bikini_c, outcome.zapatillas_c);
+            if (outcome.colaborador == st.colaborador && outcome.ultimaOrdenColaborador == act_CLB_WALK)
+            {
+                outcome = st;
+            }
 	    break;
 	    case actTURN_SR:
 	    	outcome.jugador.brujula = static_cast<Orientacion>((outcome.jugador.brujula+1)%8);
-            outcome.colaborador = applyLastAction(st, mapa, outcome.bikini_c, outcome.zapatillas_c);
+            outcome.colaborador = applyLastAction(outcome, mapa, outcome.bikini_c, outcome.zapatillas_c);
+            if (outcome.colaborador == st.colaborador && outcome.ultimaOrdenColaborador == act_CLB_WALK)
+            {
+                outcome = st;
+            }
 	    break;
         case actIDLE:
-            outcome.colaborador = applyLastAction(st, mapa, outcome.bikini_c, outcome.zapatillas_c);
+            outcome.colaborador = applyLastAction(outcome, mapa, outcome.bikini_c, outcome.zapatillas_c);
+            if (outcome.colaborador == st.colaborador && outcome.ultimaOrdenColaborador == act_CLB_WALK)
+            {
+                outcome = st;
+            }
         break;
         case act_CLB_WALK:
             next_square = nextSquare(st.colaborador);
@@ -367,152 +387,54 @@ list<Action> AgentBreadthFirstSearch(const state &inicio, const ubicacion &final
 	
 	return plan;
 }
-// TODO: Refactorizar método
-//bool colaboratorInSight(const state & st)
-//{
-//    int fdiff, cdiff;
-//    vector<int> offset = {1, 2, 3};
-//    switch (st.jugador.brujula)
-//    {
-//        case norte:
-//            fdiff = st.jugador.f - st.colaborador.f;
-//            cdiff = abs(st.jugador.c - st.colaborador.c);
-//            return (0 < fdiff && fdiff < 4 && cdiff < offset[fdiff-1]+1);
-//        break;
-//        case noreste:
-//            fdiff = st.jugador.f - st.colaborador.f;
-//            cdiff = st.colaborador.c - st.jugador.c;
-//            return (0 <= fdiff && fdiff < 4 && 0 <= cdiff && cdiff < 4);
-//        break;
-//        case este:
-//            fdiff = abs(st.jugador.f - st.colaborador.f);
-//            cdiff = st.colaborador.c - st.jugador.c;
-//            return (0 < cdiff && cdiff < 4 && fdiff < offset[cdiff-1]+1);
-//        break;
-//        case sureste:
-//            fdiff = st.colaborador.f - st.jugador.f;
-//            cdiff = st.colaborador.c - st.jugador.c;
-//            return (0 <= fdiff && fdiff < 4 && 0 <= cdiff && cdiff < 4);
-//        break;
-//        case sur:
-//            fdiff = st.colaborador.f - st.jugador.f;
-//            cdiff = abs(st.jugador.c - st.colaborador.c);
-//            return (0 < fdiff && fdiff < 4 && cdiff < offset[fdiff-1]+1);
-//        break;
-//        case suroeste:
-//            fdiff = st.colaborador.f - st.jugador.f;
-//            cdiff = st.jugador.c - st.colaborador.c;
-//            return (0 <= fdiff && fdiff < 4 && 0 <= cdiff && cdiff < 4);
-//        break;
-//        case oeste:
-//            fdiff = abs(st.jugador.f - st.colaborador.f);
-//            cdiff = st.jugador.c - st.colaborador.c;
-//            return (0 < cdiff && cdiff < 4 && fdiff < offset[cdiff-1]+1);
-//        break;
-//        case noroeste:
-//            fdiff = st.jugador.f - st.colaborador.f;
-//            cdiff = st.jugador.c - st.colaborador.c;
-//            return (0 <= fdiff && fdiff < 4 && 0 <= cdiff && cdiff < 4);
-//        break;
-//    }
-//}
 
-bool colaboratorInSight(ubicacion j, ubicacion s, Orientacion & o){
-
-  bool lo_veo = false;
-
-  switch(o){
-    case norte:
-
-      for(int k = 0; k < 3 and !lo_veo; k++){
-
-        if((s.f == j.f - 1) and (s.c == j.c - 1 + k)){
-          lo_veo = true;
-        }
-      }
-
-      for(int k = 0; k < 5 and !lo_veo; k++){
-        if((s.f == j.f - 2) and (s.c == j.c - 2 + k)){
-          lo_veo = true;
-        }
-      }
-
-      for(int k = 0; k < 7 and !lo_veo; k++){
-        if((s.f == j.f - 3) and (s.c == j.c - 3 + k)){
-          lo_veo = true;
-        }
-      }
-
-      break;
-    case sur:
-
-      for(int k = 0; k < 3 and !lo_veo; k++){
-
-        if((s.f == j.f + 1) and (s.c == j.c - 1 + k)){
-          lo_veo = true;
-        }
-      }
-
-      for(int k = 0; k < 5 and !lo_veo; k++){
-        if((s.f == j.f + 2) and (s.c == j.c - 2 + k)){
-          lo_veo = true;
-        }
-      }
-
-      for(int k = 0; k < 7 and !lo_veo; k++){
-        if((s.f == j.f + 3) and (s.c == j.c - 3 + k)){
-          lo_veo = true;
-        }
-      }
-
-      break;
-    case este:
-      for(int k = 0; k < 3 and !lo_veo; k++){
-
-        if((s.f == j.f - 1 + k) and (s.c == j.c + 1)){
-          lo_veo = true;
-        }
-      }
-
-      for(int k = 0; k < 5 and !lo_veo; k++){
-
-        if((s.f == j.f - 2 + k) and (s.c == j.c + 2)){
-          lo_veo = true;
-        }
-      }
-
-      for(int k = 0; k < 7 and !lo_veo; k++){
-
-        if((s.f == j.f - 3 + k) and (s.c == j.c + 3)){
-          lo_veo = true;
-        }
-      }
-      break;
-    case oeste:
-      for(int k = 0; k < 3 and !lo_veo; k++){
-
-        if((s.f == j.f - 1 + k) and (s.c == j.c - 1)){
-          lo_veo = true;
-        }
-      }
-
-      for(int k = 0; k < 5 and !lo_veo; k++){
-
-        if((s.f == j.f - 2 + k) and (s.c == j.c - 2)){
-          lo_veo = true;
-        }
-      }
-
-      for(int k = 0; k < 7 and !lo_veo; k++){
-
-        if((s.f == j.f - 3 + k) and (s.c == j.c - 3)){
-          lo_veo = true;
-        }
-      }
-      break;
-  }
-
-  return lo_veo;
+bool colaboratorInSight(const state & st)
+{
+    int fdiff, cdiff;
+    vector<int> offset = {1, 2, 3};
+    switch (st.jugador.brujula)
+    {
+        case norte:
+            fdiff = st.jugador.f - st.colaborador.f;
+            cdiff = abs(st.jugador.c - st.colaborador.c);
+            return (0 < fdiff && fdiff < 4 && cdiff < offset[fdiff-1]+1);
+        break;
+        case noreste:
+            fdiff = st.jugador.f - st.colaborador.f;
+            cdiff = st.colaborador.c - st.jugador.c;
+            return (0 <= fdiff && fdiff < 4 && 0 <= cdiff && cdiff < 4);
+        break;
+        case este:
+            fdiff = abs(st.jugador.f - st.colaborador.f);
+            cdiff = st.colaborador.c - st.jugador.c;
+            return (0 < cdiff && cdiff < 4 && fdiff < offset[cdiff-1]+1);
+        break;
+        case sureste:
+            fdiff = st.colaborador.f - st.jugador.f;
+            cdiff = st.colaborador.c - st.jugador.c;
+            return (0 <= fdiff && fdiff < 4 && 0 <= cdiff && cdiff < 4);
+        break;
+        case sur:
+            fdiff = st.colaborador.f - st.jugador.f;
+            cdiff = abs(st.jugador.c - st.colaborador.c);
+            return (0 < fdiff && fdiff < 4 && cdiff < offset[fdiff-1]+1);
+        break;
+        case suroeste:
+            fdiff = st.colaborador.f - st.jugador.f;
+            cdiff = st.jugador.c - st.colaborador.c;
+            return (0 <= fdiff && fdiff < 4 && 0 <= cdiff && cdiff < 4);
+        break;
+        case oeste:
+            fdiff = abs(st.jugador.f - st.colaborador.f);
+            cdiff = st.jugador.c - st.colaborador.c;
+            return (0 < cdiff && cdiff < 4 && fdiff < offset[cdiff-1]+1);
+        break;
+        case noroeste:
+            fdiff = st.jugador.f - st.colaborador.f;
+            cdiff = st.jugador.c - st.colaborador.c;
+            return (0 <= fdiff && fdiff < 4 && 0 <= cdiff && cdiff < 4);
+        break;
+    }
 }
 
 /**
@@ -530,7 +452,6 @@ list<Action> ColaboratorBreadthFirstSearch(const state &inicio, const ubicacion 
     list<Action> plan;
 
     current_node.st = inicio;
-    current_node.st.ultimaOrdenColaborador = act_CLB_STOP;
 
     bool solution_found = (current_node.st.colaborador.f == final.f && current_node.st.colaborador.c == final.c);
 
@@ -592,7 +513,7 @@ list<Action> ColaboratorBreadthFirstSearch(const state &inicio, const ubicacion 
             }
         }
 
-        if (colaboratorInSight(current_node.st.jugador, current_node.st.colaborador, current_node.st.jugador.brujula))
+        if (colaboratorInSight(current_node.st))
         {
 		    // Generar hijo act_CLB_WALK
 		    nodeN1 child_clbwalk = current_node;
@@ -825,6 +746,12 @@ int heuristicCost(const state & st, const ubicacion & goal)
     return max(abs(goal.f - u.f), abs(goal.c - u.c));
 }
 
+int lastActionCost(const state & st, const vector<vector<unsigned char>> & map)
+{
+    bool colaborator = false;
+    return actionCost(st.ultimaOrdenColaborador, st, map, colaborator);
+}
+
 /**
  * @brief Algoritmo de búsqueda en anchura para el colaborador
  * @param inicio 
@@ -840,12 +767,8 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
     list<Action> plan;
 
     current_node.st = start;
-    current_node.accumulated_cost = heuristicCost(current_node.st, goal);
-    current_node.st.ultimaOrdenColaborador = act_CLB_STOP;
-
-    // La heurística se añade antes de ejecutar la acción o despues????
-
-    // No estoy yo muy seguro de si el set es de state
+    current_node.accumulated_cost = 0;
+    current_node.heuristic = heuristicCost(current_node.st, goal);
 
     bool solution_found = (current_node.st.colaborador.f == goal.f && current_node.st.colaborador.c == goal.c);
     bool player = true;
@@ -860,16 +783,16 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 
         if (current_node.st.colaborador.f == goal.f && current_node.st.colaborador.c == goal.c)
         {
+            cout << current_node.accumulated_cost << endl;
 			solution_found = true;
 		}
-        
-		if (!solution_found)
+        else
         {
             // Generar hijo actWALK
             nodeN3 child_walk = current_node;
-            child_walk.accumulated_cost += actionCost(actWALK, current_node.st, map, player);
+            child_walk.accumulated_cost += actionCost(actWALK, current_node.st, map, player) + lastActionCost(current_node.st, map);
             child_walk.st = apply(actWALK, current_node.st, map);
-            child_walk.accumulated_cost += heuristicCost(child_walk.st, goal);
+            child_walk.heuristic = heuristicCost(child_walk.st, goal);
             child_walk.secuencia.push_back(actWALK);
             if (explored.find(child_walk.st) == explored.end())
             {
@@ -877,9 +800,9 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 		    }
             // Generar hijo actRUN
 		    nodeN3 child_run = current_node;
-            child_run.accumulated_cost += actionCost(actRUN, current_node.st, map, player);
+            child_run.accumulated_cost += actionCost(actRUN, current_node.st, map, player) + lastActionCost(current_node.st, map);
             child_run.st = apply(actRUN, current_node.st, map);
-            child_run.accumulated_cost += heuristicCost(child_run.st, goal);
+            child_run.heuristic = heuristicCost(child_run.st, goal);
             child_run.secuencia.push_back(actRUN);
 		    if (explored.find(child_run.st) == explored.end())
             {
@@ -887,9 +810,9 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 		    }
 		    // Generar hijo actTURN_L
 		    nodeN3 child_turnl = current_node;
-            child_turnl.accumulated_cost += actionCost(actTURN_L, current_node.st, map, player);
+            child_turnl.accumulated_cost += actionCost(actTURN_L, current_node.st, map, player) + lastActionCost(current_node.st, map);
             child_turnl.st = apply(actTURN_L, current_node.st, map);
-            child_turnl.accumulated_cost += heuristicCost(child_turnl.st, goal);
+            child_turnl.heuristic = heuristicCost(child_turnl.st, goal);
             child_turnl.secuencia.push_back(actTURN_L);
             if (explored.find(child_turnl.st) == explored.end())
             {
@@ -897,33 +820,34 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 		    }		
 		    // Generar hijo actTURN_SR
 		    nodeN3 child_turnsr = current_node;
-            child_turnsr.accumulated_cost += actionCost(actTURN_SR, current_node.st, map, player);
+            child_turnsr.accumulated_cost += actionCost(actTURN_SR, current_node.st, map, player) + lastActionCost(current_node.st, map);
             child_turnsr.st = apply(actTURN_SR, current_node.st, map);
-            child_turnsr.accumulated_cost += heuristicCost(child_turnsr.st, goal);
+            child_turnsr.heuristic = heuristicCost(child_turnsr.st, goal);
             child_turnsr.secuencia.push_back(actTURN_SR);
             if (explored.find(child_turnsr.st) == explored.end())
             {
 		    	frontier.push(child_turnsr);
 		    }
+            // Generar hijo actIDLE
             if (current_node.st.ultimaOrdenColaborador != act_CLB_STOP)
             {
                 nodeN3 child_idle = current_node;
-                child_idle.accumulated_cost += actionCost(actIDLE, current_node.st, map, player);
+                child_idle.accumulated_cost += actionCost(actIDLE, current_node.st, map, player) + lastActionCost(current_node.st, map);
                 child_idle.st = apply(actIDLE, current_node.st, map);
-                child_idle.accumulated_cost += heuristicCost(child_idle.st, goal);
+                child_idle.heuristic = heuristicCost(child_idle.st, goal);
                 child_idle.secuencia.push_back(actIDLE);
                 if (explored.find(child_idle.st) == explored.end())
                 {
                     frontier.push(child_idle);
                 }
             }
-            if (colaboratorInSight(current_node.st.jugador, current_node.st.colaborador, current_node.st.jugador.brujula))
+            if (colaboratorInSight(current_node.st))
             {
 		        // Generar hijo act_CLB_WALK
 		        nodeN3 child_clbwalk = current_node;
                 child_clbwalk.accumulated_cost += actionCost(act_CLB_WALK, current_node.st, map, colaborator);
                 child_clbwalk.st = apply(act_CLB_WALK, current_node.st, map);
-                child_clbwalk.accumulated_cost += heuristicCost(child_clbwalk.st, goal);
+                child_clbwalk.heuristic = heuristicCost(child_clbwalk.st, goal);
                 child_clbwalk.secuencia.push_back(act_CLB_WALK);
 		        if (explored.find(child_clbwalk.st) == explored.end())
                 {
@@ -933,17 +857,17 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 		        nodeN3 child_clbturn = current_node;
                 child_clbturn.accumulated_cost += actionCost(act_CLB_TURN_SR, current_node.st, map, colaborator);
                 child_clbturn.st = apply(act_CLB_TURN_SR, current_node.st, map);
-                child_clbturn.accumulated_cost += heuristicCost(child_clbturn.st, goal);
+                child_clbturn.heuristic = heuristicCost(child_clbturn.st, goal);
                 child_clbturn.secuencia.push_back(act_CLB_TURN_SR);
 		        if (explored.find(child_clbturn.st) == explored.end())
                 {
 		        	frontier.push(child_clbturn);
-		        }		
+		        }
 		        // Generar hijo act_CLB_STOP
 		        nodeN3 child_clbstop = current_node;
                 child_clbstop.accumulated_cost += actionCost(act_CLB_STOP, current_node.st, map, colaborator);
                 child_clbstop.st = apply(act_CLB_STOP, current_node.st, map);
-                child_clbstop.accumulated_cost += heuristicCost(child_clbstop.st, goal);
+                child_clbstop.heuristic = heuristicCost(child_clbstop.st, goal);
                 child_clbstop.secuencia.push_back(act_CLB_STOP);
 		        if (explored.find(child_clbstop.st) == explored.end())
                 {
@@ -980,7 +904,7 @@ Action ComportamientoJugador::think(Sensores sensores)
 
 	if (sensores.nivel != 4)
     {
-        if (!hayPlan)
+        if (!exists_plan)
         {
             cout << "Calculamos un nuevo plan\n";
             current_state.jugador.f = sensores.posF;
@@ -989,10 +913,36 @@ Action ComportamientoJugador::think(Sensores sensores)
             current_state.colaborador.f = sensores.CLBposF;
             current_state.colaborador.c = sensores.CLBposC;
             current_state.colaborador.brujula = sensores.CLBsentido;
-            current_state.bikini_j = false;
-            current_state.zapatillas_j = false;
-            current_state.bikini_c = false;
-            current_state.zapatillas_c = false;
+            if (mapaResultado[current_state.jugador.f][current_state.jugador.c] == 'K')
+            {
+                current_state.bikini_j = true;
+                current_state.zapatillas_j = false;
+            }
+            else if (mapaResultado[current_state.jugador.f][current_state.jugador.c] == 'D')
+            {
+                current_state.bikini_j = false;
+                current_state.zapatillas_j = true;
+            }
+            else
+            {
+                current_state.bikini_j = false;
+                current_state.zapatillas_j = false;
+            }
+            if (mapaResultado[current_state.colaborador.f][current_state.colaborador.c] == 'K')
+            {
+                current_state.bikini_c = true;
+                current_state.zapatillas_c = false;
+            }
+            else if (mapaResultado[current_state.colaborador.f][current_state.colaborador.c] == 'D')
+            {
+                current_state.bikini_c = false;
+                current_state.zapatillas_c = true;
+            }
+            else
+            {
+                current_state.bikini_c = false;
+                current_state.zapatillas_c = false;
+            }
             current_state.ultimaOrdenColaborador = act_CLB_STOP;
 
             goal.f = sensores.destinoF;
@@ -1017,11 +967,11 @@ Action ComportamientoJugador::think(Sensores sensores)
             if (plan.size() > 0)
             {
                 VisualizaPlan(current_state, plan);
-                hayPlan = true;
+                exists_plan = true;
             }
             
         }
-        if (hayPlan && plan.size() > 0)
+        if (exists_plan && plan.size() > 0)
         {
             action = plan.front();
             plan.pop_front();
@@ -1029,14 +979,482 @@ Action ComportamientoJugador::think(Sensores sensores)
         if (plan.size() == 0)
         {
             cout << "Se completó el plan\n";
-            hayPlan = false;
+            exists_plan = false;
         }
     }
     else
     {
+        Movement move;
+        // Fase de observación
+        switch (last_action)
+        {
+            case actWALK:
+                move = setMovement(current_state.jugador.brujula, straight);
+                current_state.jugador.f += move.f;
+                current_state.jugador.c += move.c;
+            break;
+            case actRUN:
+                move = setMovement(current_state.jugador.brujula, straight);
+                current_state.jugador.f += 2*move.f;
+                current_state.jugador.c += 2*move.c;
+            break;
+            case actTURN_SR:
+                current_state.jugador.brujula = static_cast<Orientacion> ((current_state.jugador.brujula+1)%8);
+            break;
+            case actTURN_L:
+                current_state.jugador.brujula = static_cast<Orientacion> ((current_state.jugador.brujula+6)%8);
+            break;
+        }
         // Incluir solución al nivel 4
+        if (current_state.jugador.f == -1 && current_state.jugador.c == -1)
+        {
+            action = actWHEREIS;
+            last_action = actWHEREIS;
+            return action;
+        }
     }
 	return action;
+}
+
+/**
+ * @brief Método que nos determina el movimiento de avanzar en 
+ * función de hacia qué dirección queremos ir
+ * @param brujula Orientación
+ * @param view Dirección
+ * @return Tipo de movimiento
+ */
+Movement ComportamientoJugador::setMovement(const Orientacion & brujula, const Vision & view)
+{
+    Movement move;
+    switch(view)
+    {
+        case straight:
+            switch (brujula)
+            {
+                case norte: move.f--; break;
+                case noreste: move.f--; move.c++; break;
+                case este: move.c++; break;
+                case sureste: move.f++; move.c++; break;
+                case sur: move.f++; break;
+                case suroeste: move.f++; move.c--; break;
+                case oeste: move.c--; break;
+                case noroeste: move.f--; move.c--; break;
+            }
+        break;
+        case leftdiagonal:
+            switch (brujula)
+            {
+                case norte: move.f--; move.c--; break;
+                case noreste: move.f--; break;
+                case este: move.f--; move.c++; break;
+                case sureste: move.c++; break;
+                case sur: move.f++; move.c++; break;
+                case suroeste: move.f++; break;
+                case oeste: move.f++; move.c--; break;
+                case noroeste: move.c--; break;
+            }
+        break;
+        case rightdiagonal:
+            switch (brujula)
+            {
+                case norte: move.f--; move.c++; break;
+                case noreste: move.c++; break;
+                case este: move.f++; move.c++; break;
+                case sureste: move.f++; break;
+                case sur: move.f++; move.c--; break;
+                case suroeste: move.c--; break;
+                case oeste: move.f--; move.c--; break;
+                case noroeste: move.f--; break;
+            }
+        break;
+    }
+    return move;
+}
+
+//
+///**
+// * @brief Método que nos permite modificar la prioridad de aquellas
+// * casillas que teniendo el correspondiente objeto especial no nos
+// * resulta tan costoso pisarlas
+// * @param map Mapa de casillas
+// * @param prio Mapa de prioridades
+// */
+//void ComportamientoJugador::modifyPriority(const vector<vector<unsigned char>> & map, vector<vector<unsigned int>> & prio)
+//{
+//    for (int i = 0; i < map.size(); i++)
+//    {
+//        for (int j = 0; j < map[i].size(); j++)
+//        {
+//            if (bikini && map[i][j] == 'A')
+//                prio[i][j] -= 45;
+//
+//            if (zapatillas && map[i][j] == 'B')
+//                prio[i][j] -= 45;
+//        }
+//    }
+//}
+
+/**
+ * @brief Método que nos permite pintar en el mapa de casillas
+ * los precipicios iniciales
+ */
+void ComportamientoJugador::printCliffs()
+{
+    int size = mapaResultado.size();
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            mapaResultado[i][j] = 'P';
+            mapaResultado[j][i] = 'P';
+            mapaResultado[size-1-i][j] = 'P';
+            mapaResultado[j][size-1-i] = 'P';
+        }
+    }
+}
+
+///**
+// * @brief Método que nos localiza la casilla que buscamos más cercana
+// * @param map Mapa de casillas
+// * @param square Tipo de casilla
+// * @return Localización en el mapa de la casilla que buscamos
+// */
+//Square ComportamientoJugador::searchSquare(const vector<vector<unsigned char>> & map, char square)
+//{
+//    int row = current_state.fil;
+//    int column = current_state.col;
+//    int row_lowerbound = current_state.fil;
+//    int column_lowerbound = current_state.col;
+//    int row_upperbound = current_state.fil;
+//    int column_upperbound = current_state.col;
+//    int min = 500;
+//    int n = map.size();
+//    int distance;
+//    bool found = false;
+//
+//    Square out, tmp;
+//    Square base(row, column);
+//    
+//    for (int k = 1; !found && (row_lowerbound != 0 || column_lowerbound != 0 || row_upperbound != n-1 || column_upperbound != n-1); k++)
+//    {
+//        row_lowerbound = ((0 <= row - k) ? (row - k) : row_lowerbound);
+//        column_lowerbound = ((0 <= column - k) ? (column - k) : column_lowerbound);
+//        row_upperbound = ((row + k < n) ? (row + k) : row_upperbound);
+//        column_upperbound = ((column + k < n) ? (column + k) : column_upperbound);
+//
+//        for (int i = row_lowerbound; i <= row_upperbound; i++)
+//        {
+//            if (map[i][column_lowerbound] == square)
+//            {
+//                tmp = {i, column_lowerbound};
+//                distance = measureDistance(tmp, base);
+//                if (distance < min)
+//                {
+//                    out = tmp;
+//                    min = distance;
+//                }
+//            }
+//            if (map[i][column_upperbound] == square)
+//            {
+//                tmp = {i, column_upperbound};
+//                distance = measureDistance(tmp, base);
+//                if (distance < min)
+//                {
+//                    out = tmp;
+//                    min = distance;
+//                }
+//            }
+//        }
+//        for (int i = column_lowerbound; i <= column_upperbound; i++)
+//        {
+//            if (map[row_lowerbound][i] == square)
+//            {
+//                tmp = {row_lowerbound, i};
+//                distance = measureDistance(tmp, base);
+//                if (distance < min)
+//                {
+//                    out = tmp;
+//                    min = distance;
+//                }
+//            }
+//            if (map[row_upperbound][i] == square)
+//            {
+//                tmp = {row_upperbound, i};
+//                distance = measureDistance(tmp, base);
+//                if (distance < min)
+//                {
+//                    out = tmp;
+//                    min = distance;
+//                }
+//            }
+//        }
+//        if (min != 500)
+//        {
+//            found = true;
+//        }
+//    }
+//
+//    return out;
+//}
+//
+///**
+// * @brief Método que nos permite imprimir en los mapas lo que vemos
+// * por el sensor de terreno
+// * @param terreno Sensor de terreno
+// * @param st Posición actual
+// * @param map Mapa de casillas
+// * @param prio Mapa de prioridades
+// * @param faulty Determina si nuestro sensor está defectuoso
+// */
+//void ComportamientoJugador::printMap(const vector<unsigned char> & terreno, const State & st, vector<vector<unsigned char>> & map, vector<vector<unsigned int>> & prio, bool faulty)
+//{
+//    int k = 0;
+//    if (map[st.fil][st.col] == '?')
+//    {
+//        map[st.fil][st.col] = terreno[k];
+//        prio[st.fil][st.col] = setPriority(terreno[k]);
+//    }
+//    k++;
+//    switch (st.brujula)
+//    {
+//        case norte:
+//            for (int i = 1; i < 4; i++)
+//            {
+//                for (int j = 1; j < 2*i+2; j++)
+//                {
+//                    if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
+//                    {
+//                        k++;
+//                        continue;
+//                    }
+//
+//                    if (map[st.fil - i][st.col - i - 1 + j] == '?')
+//                    {
+//                        map[st.fil - i][st.col - i - 1 + j] = terreno[k];
+//                        prio[st.fil - i][st.col - i - 1 + j] = setPriority(terreno[k]);
+//                    }
+//                    k++;
+//                }
+//            }  
+//        break;
+//        case noreste:
+//            for (int i = 1; i < 4; i++)
+//            {
+//                for (int j = 1; j < 2*i + 2; j++)
+//                {
+//                    if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
+//                    {
+//                        k++;
+//                        continue;
+//                    }
+//
+//                    if (j < i + 1)
+//                    {
+//                        if (map[st.fil - i][st.col + j - 1] == '?')
+//                        {
+//                            map[st.fil - i][st.col + j - 1] = terreno[k];
+//                            prio[st.fil - i][st.col + j - 1] = setPriority(terreno[k]);
+//                        }
+//                        k++;
+//                    }
+//                    else
+//                    {
+//                        if (map[st.fil - i - i - 1 + j][st.col + i] == '?')
+//                        {
+//                            map[st.fil - i - i - 1 + j][st.col + i] = terreno[k];
+//                            prio[st.fil - i - i - 1 + j][st.col + i] = setPriority(terreno[k]);
+//                        }
+//                        k++;
+//                    }  
+//                }
+//            }     
+//        break;
+//        case este:
+//            for (int i = 1; i < 4; i++)
+//            {
+//                for (int j = 1; j < 2*i+2; j++)
+//                {
+//                    if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
+//                    {
+//                        k++;
+//                        continue;
+//                    }
+//
+//                    if (map[st.fil - i - 1 + j][st.col + i] == '?')
+//                    {
+//                        map[st.fil - i - 1 + j][st.col + i] = terreno[k];
+//                        prio[st.fil - i - 1 + j][st.col + i] = setPriority(terreno[k]);
+//                    }
+//                    k++;
+//                }
+//            }      
+//        break;
+//        case sureste:
+//        for (int i = 1; i < 4; i++)
+//        {
+//          for (int j = 1; j < 2*i+2; j++)
+//          {
+//            if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
+//            {
+//                k++;
+//                continue;
+//            }
+//
+//            if (j < i + 1)
+//            {
+//                if (map[st.fil + j - 1][st.col + i] == '?')
+//                {
+//                    map[st.fil + j - 1][st.col + i] = terreno[k];
+//                    prio[st.fil + j - 1][st.col + i] = setPriority(terreno[k]);
+//                }
+//                k++;
+//            }
+//            else
+//            {
+//                if (map[st.fil + i][st.col + i + i + 1 - j] == '?')
+//                {
+//                    map[st.fil + i][st.col + i + i + 1 - j] = terreno[k];
+//                    prio[st.fil + i][st.col + i + i + 1 - j] = setPriority(terreno[k]);
+//                }
+//                k++;
+//            }
+//          }
+//        }    
+//        break;
+//        case sur:
+//            for (int i = 1; i < 4; i++)
+//            {
+//                for (int j = 1; j < 2*i+2; j++)
+//                {
+//                    if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
+//                    {
+//                        k++;
+//                        continue;
+//                    }
+//                    
+//                    if (map[st.fil + i][st.col + i + 1 - j] == '?')
+//                    {
+//                        map[st.fil + i][st.col + i + 1 - j] = terreno[k];
+//                        prio[st.fil + i][st.col + i + 1 - j] = setPriority(terreno[k]);
+//                    }
+//                    k++;
+//                }
+//            }
+//        break;
+//        case suroeste:
+//            for (int i = 1; i < 4; i++)
+//            {
+//              for (int j = 1; j < 2*i+2; j++)
+//              {
+//                if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
+//                {
+//                    k++;
+//                    continue;
+//                }
+//
+//                if (j < i + 1)
+//                {
+//                    if (map[st.fil + i][st.col - j + 1] == '?')
+//                    {
+//                        map[st.fil + i][st.col - j + 1] = terreno[k];
+//                        prio[st.fil + i][st.col - j + 1] = setPriority(terreno[k]);
+//                    }
+//                    k++;
+//                }
+//                else
+//                {
+//                    if (map[st.fil + i + i + 1 - j][st.col - i] == '?')
+//                    {
+//                        map[st.fil + i + i + 1 - j][st.col - i] = terreno[k];
+//                        prio[st.fil + i + i + 1 - j][st.col - i] = setPriority(terreno[k]);
+//                    }
+//                    k++;
+//                }
+//              }
+//            }    
+//        break;
+//        case oeste:
+//            for (int i = 1; i < 4; i++)
+//            {
+//                for (int j = 1; j < 2*i+2; j++)
+//                {
+//                    if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
+//                    {
+//                        k++;
+//                        continue;
+//                    }
+//
+//                    if (map[st.fil + i + 1 - j][st.col - i] == '?')
+//                    {
+//                        map[st.fil + i + 1 - j][st.col - i] = terreno[k];
+//                        prio[st.fil + i + 1 - j][st.col - i] = setPriority(terreno[k]);
+//                    }
+//                    k++;
+//                }
+//            }
+//        break;
+//        case noroeste:
+//        for (int i = 1; i < 4; i++)
+//        {
+//          for (int j = 1; j < 2*i+2; j++)
+//          {
+//            if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
+//            {
+//                k++;
+//                continue;
+//            }
+//
+//            if (j < i + 1)
+//            {
+//                if (map[st.fil - j + 1][st.col - i] == '?')
+//                {
+//                    map[st.fil - j + 1][st.col - i] = terreno[k];
+//                    prio[st.fil - j + 1][st.col - i] = setPriority(terreno[k]);
+//                }
+//                k++;
+//            }
+//            else
+//            {
+//                if (map[st.fil - i][st.col - i - i - 1 + j] == '?')
+//                {
+//                    map[st.fil - i][st.col - i - i - 1 + j] = terreno[k];
+//                    prio[st.fil - i][st.col - i - i - 1 + j] = setPriority(terreno[k]);
+//                }
+//                k++;
+//            }
+//          }
+//        }  
+//        break;
+//    }
+//}
+
+/**
+ * @brief Método de reset del agente
+ */
+void ComportamientoJugador::resetState()
+{
+    current_state.jugador.f = 99;
+    current_state.jugador.c = 99;
+    current_state.jugador.brujula = norte;
+    current_state.colaborador.f = 99;
+    current_state.colaborador.c = 99;
+    current_state.colaborador.brujula = norte;
+    current_state.ultimaOrdenColaborador = act_CLB_STOP;
+    current_state.bikini_j = false;
+    current_state.zapatillas_j = false;
+    current_state.bikini_c = false;
+    current_state.zapatillas_c = false;
+    last_action = actIDLE;
+    bien_situado = false;
+    bikini = false;
+    zapatillas = false;
+    reload = false;
+    need_reload = false;
+    goto_objective = false;
+    wall_protocol = false;
+    faulty = false;
+    desperate = false;
+    random = false;
 }
 
 int ComportamientoJugador::interact(Action accion, int valor)

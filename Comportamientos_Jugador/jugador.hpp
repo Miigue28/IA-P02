@@ -8,6 +8,11 @@
 #include <queue>
 #include <algorithm>
 
+#define BATTERY_THRESH 2500
+#define HEALTH_MODERATE_THRESH 2000
+#define HEALTH_DESPERATE_THRESH 1500
+#define RELOAD_THRESH 4500
+
 struct state
 {
     ubicacion jugador;
@@ -20,8 +25,7 @@ struct state
 
     bool operator==(const state & x) const
     {
-        // No tenemos en cuenta la orientación que tiene el colaborador
-        if (jugador == x.jugador && colaborador.f == x.colaborador.f && colaborador.c == x.colaborador.c)
+        if (jugador == x.jugador && colaborador.f == x.colaborador.f && colaborador.c == x.colaborador.c && bikini_j == x.bikini_j && zapatillas_j == x.zapatillas_j && bikini_c == x.bikini_c && zapatillas_c && x.zapatillas_c)
             return true;
         else
             return false;
@@ -36,17 +40,31 @@ struct state
             return true;
         else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j < b.bikini_j)
             return true;
-        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j && zapatillas_j < b.zapatillas_j)
+        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j 
+            && zapatillas_j < b.zapatillas_j)
             return true;
-        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j && zapatillas_j == b.zapatillas_j && colaborador.f < b.colaborador.f)
+        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j 
+            && zapatillas_j == b.zapatillas_j && colaborador.f < b.colaborador.f)
             return true;
-        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c < b.colaborador.c)
+        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j 
+            && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c < b.colaborador.c)
             return true;
-        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c == b.colaborador.c && colaborador.brujula < b.colaborador.brujula)
+        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j 
+            && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c == b.colaborador.c 
+                && colaborador.brujula < b.colaborador.brujula)
             return true;
-        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c == b.colaborador.c && colaborador.brujula == b.colaborador.brujula && bikini_c < b.bikini_c)
+        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j 
+            && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c == b.colaborador.c 
+                && colaborador.brujula == b.colaborador.brujula && bikini_c < b.bikini_c)
             return true;
-        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c == b.colaborador.c && colaborador.brujula == b.colaborador.brujula && bikini_c == b.bikini_c && zapatillas_c < b.zapatillas_c)
+        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j 
+            && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c == b.colaborador.c 
+                && colaborador.brujula == b.colaborador.brujula && bikini_c == b.bikini_c && zapatillas_c < b.zapatillas_c)
+            return true;
+        else if (jugador.f == b.jugador.f && jugador.c == b.jugador.c && jugador.brujula == b.jugador.brujula && bikini_j == b.bikini_j 
+            && zapatillas_j == b.zapatillas_j && colaborador.f == b.colaborador.f && colaborador.c == b.colaborador.c 
+                && colaborador.brujula == b.colaborador.brujula && bikini_c == b.bikini_c && zapatillas_c == b.zapatillas_c 
+                    && ultimaOrdenColaborador < b.ultimaOrdenColaborador)
             return true;
         else
             return false;
@@ -117,10 +135,7 @@ struct nodeN2
 		return (st == n.st);
 	}
     bool operator<(const nodeN2 &b)  const {
-        if (accumulated_cost > b.accumulated_cost)
-            return true;
-        else
-            return false;
+        return (accumulated_cost > b.accumulated_cost);
 	}
 };
 
@@ -129,23 +144,52 @@ struct nodeN3
     state st;
 	list<Action> secuencia;
     int accumulated_cost;
+    int heuristic;
     
 	bool operator==(const nodeN3 &n) const {
 		return (st == n.st);
 	}
     bool operator<(const nodeN3 &b)  const {
-        return (accumulated_cost > b.accumulated_cost);
+        return (accumulated_cost + heuristic > b.accumulated_cost + b.heuristic);
 	}
 };
+
+struct Movement : public ubicacion
+{
+
+};
+
+enum Vision {leftdiagonal, straight, rightdiagonal};
 
 class ComportamientoJugador : public Comportamiento {
   public:
     ComportamientoJugador(unsigned int size) : Comportamiento(size) {
-      // Inicializar Variables de Estado
+        printCliffs();
+        current_state.jugador.f = -1;
+        current_state.jugador.c = -1;
+        current_state.jugador.brujula = norte;
+        current_state.colaborador.f = -1;
+        current_state.colaborador.c = -1;
+        current_state.colaborador.brujula = norte;
+        current_state.ultimaOrdenColaborador = act_CLB_STOP;
+        current_state.bikini_j = false;
+        current_state.zapatillas_j = false;
+        current_state.bikini_c = false;
+        current_state.zapatillas_c = false;
+        last_action = actIDLE;
+        bien_situado = false;
+        bikini = false;
+        zapatillas = false;
+        reload = false;
+        need_reload = false;
+        goto_objective = false;
+        wall_protocol = false;
+        faulty = false;
+        desperate = false;
+        random = false;
     }
-    ComportamientoJugador(std::vector< std::vector< unsigned char> > mapaR) : Comportamiento(mapaR) {
-      // Inicializar Variables de Estado
-      hayPlan = false;
+    ComportamientoJugador(std::vector<std::vector<unsigned char>> mapaR) : Comportamiento(mapaR) {
+        exists_plan = false;
     }
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}
     ~ComportamientoJugador(){}
@@ -153,15 +197,29 @@ class ComportamientoJugador : public Comportamiento {
     Action think(Sensores sensores);
     int interact(Action accion, int valor);
 
+    Movement setMovement(const Orientacion & brujula, const Vision & view);
+
     void VisualizaPlan(const state &st, const list<Action> &plan);
 
   private:
     // Declarar Variables de Estado
     state current_state;
+    Action last_action;
+    bool exists_plan;
     ubicacion goal;
     list<Action> plan;
-    bool hayPlan;
-
+    bool bien_situado;
+    bool bikini;
+    bool zapatillas;
+    bool reload;
+    bool need_reload;
+    bool goto_objective;
+    bool wall_protocol;
+    bool faulty;
+    bool desperate;
+    bool random;
+    void resetState();
+    void printCliffs();
 };
 
 #endif
