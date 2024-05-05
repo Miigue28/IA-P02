@@ -8,10 +8,12 @@
 #include <queue>
 #include <algorithm>
 
-#define BATTERY_THRESH 2500
-#define HEALTH_MODERATE_THRESH 2000
-#define HEALTH_DESPERATE_THRESH 1500
-#define RELOAD_THRESH 4500
+#define BATTERY_THRESH 1000
+#define HEALTH_MODERATE_THRESH 1500
+#define HEALTH_DESPERATE_THRESH 1000
+#define RELOAD_THRESH 2500
+#define QUICK_RELOAD_THRESH 1500
+#define DESPERATE_RELOAD_THRESH 1000
 
 struct state
 {
@@ -177,9 +179,8 @@ class ComportamientoJugador : public Comportamiento {
         current_state.bikini_c = false;
         current_state.zapatillas_c = false;
         last_action = actIDLE;
-        bien_situado = false;
-        bikini = false;
-        zapatillas = false;
+        exists_plan = false;
+        need_replan = false;
         reload = false;
         need_reload = false;
         goto_objective = false;
@@ -197,7 +198,17 @@ class ComportamientoJugador : public Comportamiento {
     Action think(Sensores sensores);
     int interact(Action accion, int valor);
 
-    Movement setMovement(const Orientacion & brujula, const Vision & view);
+    void printMap(const vector<unsigned char> & terreno, const state & st, vector<vector<unsigned char>> & map);
+
+    bool detectBikini(const vector<unsigned char> & terreno);
+    bool detectZapatillas(const vector<unsigned char> & terreno);
+    bool detectReload(const vector<unsigned char> & terreno);
+    bool detectForest(const vector<unsigned char> & terreno);
+    bool detectOcean(const vector<unsigned char> & terreno);
+    bool detectWalls(const vector<unsigned char> & terreno);
+
+    int measureDistance(const ubicacion & sq1, const ubicacion & sq2);
+    ubicacion searchSquare(const vector<vector<unsigned char>> & map, char square);
 
     void VisualizaPlan(const state &st, const list<Action> &plan);
 
@@ -206,11 +217,9 @@ class ComportamientoJugador : public Comportamiento {
     state current_state;
     Action last_action;
     bool exists_plan;
+    bool need_replan;
     ubicacion goal;
     list<Action> plan;
-    bool bien_situado;
-    bool bikini;
-    bool zapatillas;
     bool reload;
     bool need_reload;
     bool goto_objective;
@@ -218,7 +227,6 @@ class ComportamientoJugador : public Comportamiento {
     bool faulty;
     bool desperate;
     bool random;
-    void resetState();
     void printCliffs();
 };
 

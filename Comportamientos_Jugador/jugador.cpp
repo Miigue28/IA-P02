@@ -984,91 +984,230 @@ Action ComportamientoJugador::think(Sensores sensores)
     }
     else
     {
+        // Incluir solución al nivel 4
         Movement move;
         // Fase de observación
         switch (last_action)
         {
-            case actWALK:
-                move = setMovement(current_state.jugador.brujula, straight);
-                current_state.jugador.f += move.f;
-                current_state.jugador.c += move.c;
+            // TODO: Podríamos modificar el apply añadiendole el case actWhereis
+            case actWHEREIS:
+                current_state.jugador.f = sensores.posF;
+                current_state.jugador.c = sensores.posC;
+                current_state.jugador.brujula = sensores.sentido;
+                current_state.colaborador.f = sensores.CLBposF;
+                current_state.colaborador.c = sensores.CLBposC;
+                current_state.colaborador.brujula = sensores.CLBsentido;
             break;
-            case actRUN:
-                move = setMovement(current_state.jugador.brujula, straight);
-                current_state.jugador.f += 2*move.f;
-                current_state.jugador.c += 2*move.c;
-            break;
-            case actTURN_SR:
-                current_state.jugador.brujula = static_cast<Orientacion> ((current_state.jugador.brujula+1)%8);
-            break;
-            case actTURN_L:
-                current_state.jugador.brujula = static_cast<Orientacion> ((current_state.jugador.brujula+6)%8);
+            default:
+                current_state = apply(last_action, current_state, mapaResultado);
             break;
         }
-        // Incluir solución al nivel 4
+
         if (current_state.jugador.f == -1 && current_state.jugador.c == -1)
         {
             action = actWHEREIS;
-            last_action = actWHEREIS;
+            last_action = action;
             return action;
         }
+        else
+        {
+            // Imprimimos en el mapa lo que ven nuestros sensores
+            printMap(sensores.terreno, current_state, mapaResultado);
+        }
+
+        switch (sensores.terreno[0])
+        {
+            case 'X':
+                need_reload = false;
+                // Nos esperamos hasta que recarguemos suficientemente la batería
+                if (sensores.vida < HEALTH_DESPERATE_THRESH && sensores.bateria < DESPERATE_RELOAD_THRESH)
+                {
+                    last_action = action;
+                    return action;
+                }
+                else if (sensores.vida < HEALTH_MODERATE_THRESH && sensores.bateria < QUICK_RELOAD_THRESH)
+                {
+                    last_action = action;
+                    return action;
+                }
+                else if (sensores.bateria < RELOAD_THRESH)
+                {
+                    last_action = action;
+                    return action;
+                }
+            break;
+        }
+
+        if (!need_replan)
+        {
+            // Si nos vamos a chocar con un muro
+            if (detectWalls(sensores.terreno))
+            {
+                need_replan = true;
+            }
+            // Si nos encontramos rodeados de mucho agua y no tenemos bikini
+            else if (!current_state.bikini_j && detectOcean(sensores.terreno))
+            {
+                need_replan = true;
+            }
+            // Si nos encontramos rodeados de mucho bosque y no tenemos zapatillas
+            else if (!current_state.zapatillas_j && detectForest(sensores.terreno))
+            {
+                need_replan = true;
+            }
+            // Si hemos visto previamente una casilla de recarga y necesitamos recargar
+            else if ((reload || detectReload(sensores.terreno)) && sensores.bateria < BATTERY_THRESH)
+            {
+                goal = searchSquare(mapaResultado, 'X');
+                // Si está relativamente cerca de nuestra posición vamos a por ella
+                if (measureDistance(current_state.jugador, goal) < 25)
+                {
+                    need_replan = true;
+                }
+            }
+        }
+        else
+        {
+            need_replan = false;
+        }
+
+        if (need_replan)
+        {
+            plan = AgentUniformCostSearch(current_state, goal, mapaResultado);
+            if (plan.size() > 0)
+            {
+                VisualizaPlan(current_state, plan);
+                exists_plan = true;
+            }
+        }
+        else if (exists_plan && plan.size() > 0)
+        {
+            action = plan.front();
+            plan.pop_front();
+        }
+        else
+        {
+            goal.f = sensores.destinoF;
+            goal.c = sensores.destinoC;
+            plan = AgentUniformCostSearch(current_state, goal, mapaResultado);
+            if (plan.size() > 0)
+            {
+                VisualizaPlan(current_state, plan);
+                exists_plan = true;
+            }
+        }
+        if (plan.size() == 0)
+        {
+            cout << "Se completó el plan\n";
+            exists_plan = false;
+        }
     }
+    // Devuelve el valor de la acción
+    last_action = action;
 	return action;
 }
 
 /**
- * @brief Método que nos determina el movimiento de avanzar en 
- * función de hacia qué dirección queremos ir
- * @param brujula Orientación
- * @param view Dirección
- * @return Tipo de movimiento
+ * @brief Método que nos permite medir la distancia entre dos casillas
+ * haciendo uso de la distancia de Chebyshov
+ * @param sq1 Casilla a medir distancia
+ * @param sq2 Casilla a medir distancia
+ * @return Distancia entre ambas casillas
  */
-Movement ComportamientoJugador::setMovement(const Orientacion & brujula, const Vision & view)
+int ComportamientoJugador::measureDistance(const ubicacion & sq1, const ubicacion & sq2)
 {
-    Movement move;
-    switch(view)
+    return max(abs(sq1.f - sq2.f),  abs(sq1.c - sq2.c));
+}
+
+/**
+ * @brief Método que detecta si nos encontramos cerca de un bikini
+ * @param terreno Sensores de terreno
+ * @return True si lo estamos, False en caso contrario
+ */
+bool ComportamientoJugador::detectBikini(const vector<unsigned char> & terreno)
+{
+    for (auto t : terreno)
     {
-        case straight:
-            switch (brujula)
-            {
-                case norte: move.f--; break;
-                case noreste: move.f--; move.c++; break;
-                case este: move.c++; break;
-                case sureste: move.f++; move.c++; break;
-                case sur: move.f++; break;
-                case suroeste: move.f++; move.c--; break;
-                case oeste: move.c--; break;
-                case noroeste: move.f--; move.c--; break;
-            }
-        break;
-        case leftdiagonal:
-            switch (brujula)
-            {
-                case norte: move.f--; move.c--; break;
-                case noreste: move.f--; break;
-                case este: move.f--; move.c++; break;
-                case sureste: move.c++; break;
-                case sur: move.f++; move.c++; break;
-                case suroeste: move.f++; break;
-                case oeste: move.f++; move.c--; break;
-                case noroeste: move.c--; break;
-            }
-        break;
-        case rightdiagonal:
-            switch (brujula)
-            {
-                case norte: move.f--; move.c++; break;
-                case noreste: move.c++; break;
-                case este: move.f++; move.c++; break;
-                case sureste: move.f++; break;
-                case sur: move.f++; move.c--; break;
-                case suroeste: move.c--; break;
-                case oeste: move.f--; move.c--; break;
-                case noroeste: move.f--; break;
-            }
-        break;
+        if (t == 'K')
+            return true;
     }
-    return move;
+    return false;
+}
+
+/**
+ * @brief Método que detecta si nos encontramos cerca de unas zapatillas
+ * @param terreno Sensores de terreno
+ * @return True si lo estamos, False en caso contrario
+ */
+bool ComportamientoJugador::detectZapatillas(const vector<unsigned char> & terreno)
+{
+    for (auto t : terreno)
+    {
+        if (t == 'D')
+            return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Método que detecta si nos encontramos cerca de un posicionamineto
+ * @param terreno Sensores de terreno
+ * @return True si lo estamos, False en caso contrario
+ */
+bool ComportamientoJugador::detectForest(const vector<unsigned char> & terreno)
+{
+    int counter = 0;
+    for (auto t : terreno)
+    {
+        if (t == 'B')
+            counter++;
+    }
+    return counter > 8;
+}
+
+/**
+ * @brief Método que detecta si nos encontramos cerca de un posicionamineto
+ * @param terreno Sensores de terreno
+ * @return True si lo estamos, False en caso contrario
+ */
+bool ComportamientoJugador::detectOcean(const vector<unsigned char> & terreno)
+{
+    int counter = 0;
+    for (auto t : terreno)
+    {
+        if (t == 'A')
+            counter++;
+    }
+    return counter > 8;
+}
+
+/**
+ * @brief Método que detecta si nos encontramos cerca de una recarga
+ * @param terreno Sensores de terreno
+ * @return True si lo estamos, False en caso contrario
+ */
+bool ComportamientoJugador::detectReload(const vector<unsigned char> & terreno)
+{
+    for (auto t : terreno)
+    {
+        if (t == 'X')
+        {
+            // Notificamos que hemos visto al menos una casilla de recarga
+            reload = true;
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief Método que detecta si nos vamos a chocar contra un muro
+ * @param terreno Sensores de terreno
+ * @return True si lo estamos, False en caso contrario
+ */
+bool ComportamientoJugador::detectWalls(const vector<unsigned char> & terreno)
+{
+    return (terreno[2] == 'M');
 }
 
 //
@@ -1095,6 +1234,266 @@ Movement ComportamientoJugador::setMovement(const Orientacion & brujula, const V
 //}
 
 /**
+ * @brief Método que nos localiza la casilla que buscamos más cercana
+ * @param map Mapa de casillas
+ * @param square Tipo de casilla
+ * @return Localización en el mapa de la casilla que buscamos
+ */
+ubicacion ComportamientoJugador::searchSquare(const vector<vector<unsigned char>> & map, char square)
+{
+    int row = current_state.jugador.f;
+    int column = current_state.jugador.c;
+    int row_lowerbound = current_state.jugador.f;
+    int column_lowerbound = current_state.jugador.c;
+    int row_upperbound = current_state.jugador.f;
+    int column_upperbound = current_state.jugador.c;
+    int min = 500;
+    int n = map.size();
+    int distance;
+    bool found = false;
+
+    ubicacion out, tmp, base;
+
+    base.f = row;
+    base.c = column;
+    
+    for (int k = 1; !found && (row_lowerbound != 0 || column_lowerbound != 0 || row_upperbound != n-1 || column_upperbound != n-1); k++)
+    {
+        row_lowerbound = ((0 <= row - k) ? (row - k) : row_lowerbound);
+        column_lowerbound = ((0 <= column - k) ? (column - k) : column_lowerbound);
+        row_upperbound = ((row + k < n) ? (row + k) : row_upperbound);
+        column_upperbound = ((column + k < n) ? (column + k) : column_upperbound);
+
+        for (int i = row_lowerbound; i <= row_upperbound; i++)
+        {
+            if (map[i][column_lowerbound] == square)
+            {
+                tmp = {i, column_lowerbound};
+                distance = measureDistance(tmp, base);
+                if (distance < min)
+                {
+                    out = tmp;
+                    min = distance;
+                }
+            }
+            if (map[i][column_upperbound] == square)
+            {
+                tmp = {i, column_upperbound};
+                distance = measureDistance(tmp, base);
+                if (distance < min)
+                {
+                    out = tmp;
+                    min = distance;
+                }
+            }
+        }
+        for (int i = column_lowerbound; i <= column_upperbound; i++)
+        {
+            if (map[row_lowerbound][i] == square)
+            {
+                tmp = {row_lowerbound, i};
+                distance = measureDistance(tmp, base);
+                if (distance < min)
+                {
+                    out = tmp;
+                    min = distance;
+                }
+            }
+            if (map[row_upperbound][i] == square)
+            {
+                tmp = {row_upperbound, i};
+                distance = measureDistance(tmp, base);
+                if (distance < min)
+                {
+                    out = tmp;
+                    min = distance;
+                }
+            }
+        }
+        if (min != 500)
+        {
+            found = true;
+        }
+    }
+
+    return out;
+}
+
+/**
+ * @brief Método que nos permite imprimir en los mapas lo que vemos
+ * por el sensor de terreno
+ * @param terreno Sensor de terreno
+ * @param st Posición actual
+ * @param map Mapa de casillas
+ * @param prio Mapa de prioridades
+ * @param faulty Determina si nuestro sensor está defectuoso
+ */
+void ComportamientoJugador::printMap(const vector<unsigned char> & terreno, const state & st, vector<vector<unsigned char>> & map)
+{
+    int k = 0;
+    int row = st.jugador.f;
+    int column = st.jugador.c;
+    if (map[row][column] == '?')
+    {
+        map[row][column] = terreno[k];
+    }
+    k++;
+    switch (st.jugador.brujula)
+    {
+        case norte:
+            for (int i = 1; i < 4; i++)
+            {
+                for (int j = 1; j < 2*i+2; j++)
+                {
+                    if (map[row - i][column - i - 1 + j] == '?')
+                    {
+                        map[row - i][column - i - 1 + j] = terreno[k];
+                    }
+                    k++;
+                }
+            }  
+        break;
+        case noreste:
+            for (int i = 1; i < 4; i++)
+            {
+                for (int j = 1; j < 2*i + 2; j++)
+                {
+                    if (j < i + 1)
+                    {
+                        if (map[row - i][column + j - 1] == '?')
+                        {
+                            map[row - i][column + j - 1] = terreno[k];
+                        }
+                        k++;
+                    }
+                    else
+                    {
+                        if (map[row - i - i - 1 + j][column + i] == '?')
+                        {
+                            map[row - i - i - 1 + j][column + i] = terreno[k];
+                        }
+                        k++;
+                    }  
+                }
+            }     
+        break;
+        case este:
+            for (int i = 1; i < 4; i++)
+            {
+                for (int j = 1; j < 2*i+2; j++)
+                {
+                    if (map[row - i - 1 + j][column + i] == '?')
+                    {
+                        map[row - i - 1 + j][column + i] = terreno[k];
+                    }
+                    k++;
+                }
+            }      
+        break;
+        case sureste:
+        for (int i = 1; i < 4; i++)
+        {
+          for (int j = 1; j < 2*i+2; j++)
+          {
+            if (j < i + 1)
+            {
+                if (map[row + j - 1][column + i] == '?')
+                {
+                    map[row + j - 1][column + i] = terreno[k];
+                }
+                k++;
+            }
+            else
+            {
+                if (map[row + i][column + i + i + 1 - j] == '?')
+                {
+                    map[row + i][column + i + i + 1 - j] = terreno[k];
+                }
+                k++;
+            }
+          }
+        }    
+        break;
+        case sur:
+            for (int i = 1; i < 4; i++)
+            {
+                for (int j = 1; j < 2*i+2; j++)
+                {
+                    
+                    if (map[row + i][column + i + 1 - j] == '?')
+                    {
+                        map[row + i][column + i + 1 - j] = terreno[k];
+                    }
+                    k++;
+                }
+            }
+        break;
+        case suroeste:
+            for (int i = 1; i < 4; i++)
+            {
+              for (int j = 1; j < 2*i+2; j++)
+              {
+
+                if (j < i + 1)
+                {
+                    if (map[row + i][column - j + 1] == '?')
+                    {
+                        map[row + i][column - j + 1] = terreno[k];
+                    }
+                    k++;
+                }
+                else
+                {
+                    if (map[row + i + i + 1 - j][column - i] == '?')
+                    {
+                        map[row + i + i + 1 - j][column - i] = terreno[k];
+                    }
+                    k++;
+                }
+              }
+            }    
+        break;
+        case oeste:
+            for (int i = 1; i < 4; i++)
+            {
+                for (int j = 1; j < 2*i+2; j++)
+                {
+                    if (map[row + i + 1 - j][column - i] == '?')
+                    {
+                        map[row + i + 1 - j][column - i] = terreno[k];
+                    }
+                    k++;
+                }
+            }
+        break;
+        case noroeste:
+        for (int i = 1; i < 4; i++)
+        {
+          for (int j = 1; j < 2*i+2; j++)
+          {
+            if (j < i + 1)
+            {
+                if (map[row - j + 1][column - i] == '?')
+                {
+                    map[row - j + 1][column - i] = terreno[k];
+                }
+                k++;
+            }
+            else
+            {
+                if (map[row - i][column - i - i - 1 + j] == '?')
+                {
+                    map[row - i][column - i - i - 1 + j] = terreno[k];
+                }
+                k++;
+            }
+          }
+        }  
+        break;
+    }
+}
+
+/**
  * @brief Método que nos permite pintar en el mapa de casillas
  * los precipicios iniciales
  */
@@ -1111,350 +1510,6 @@ void ComportamientoJugador::printCliffs()
             mapaResultado[j][size-1-i] = 'P';
         }
     }
-}
-
-///**
-// * @brief Método que nos localiza la casilla que buscamos más cercana
-// * @param map Mapa de casillas
-// * @param square Tipo de casilla
-// * @return Localización en el mapa de la casilla que buscamos
-// */
-//Square ComportamientoJugador::searchSquare(const vector<vector<unsigned char>> & map, char square)
-//{
-//    int row = current_state.fil;
-//    int column = current_state.col;
-//    int row_lowerbound = current_state.fil;
-//    int column_lowerbound = current_state.col;
-//    int row_upperbound = current_state.fil;
-//    int column_upperbound = current_state.col;
-//    int min = 500;
-//    int n = map.size();
-//    int distance;
-//    bool found = false;
-//
-//    Square out, tmp;
-//    Square base(row, column);
-//    
-//    for (int k = 1; !found && (row_lowerbound != 0 || column_lowerbound != 0 || row_upperbound != n-1 || column_upperbound != n-1); k++)
-//    {
-//        row_lowerbound = ((0 <= row - k) ? (row - k) : row_lowerbound);
-//        column_lowerbound = ((0 <= column - k) ? (column - k) : column_lowerbound);
-//        row_upperbound = ((row + k < n) ? (row + k) : row_upperbound);
-//        column_upperbound = ((column + k < n) ? (column + k) : column_upperbound);
-//
-//        for (int i = row_lowerbound; i <= row_upperbound; i++)
-//        {
-//            if (map[i][column_lowerbound] == square)
-//            {
-//                tmp = {i, column_lowerbound};
-//                distance = measureDistance(tmp, base);
-//                if (distance < min)
-//                {
-//                    out = tmp;
-//                    min = distance;
-//                }
-//            }
-//            if (map[i][column_upperbound] == square)
-//            {
-//                tmp = {i, column_upperbound};
-//                distance = measureDistance(tmp, base);
-//                if (distance < min)
-//                {
-//                    out = tmp;
-//                    min = distance;
-//                }
-//            }
-//        }
-//        for (int i = column_lowerbound; i <= column_upperbound; i++)
-//        {
-//            if (map[row_lowerbound][i] == square)
-//            {
-//                tmp = {row_lowerbound, i};
-//                distance = measureDistance(tmp, base);
-//                if (distance < min)
-//                {
-//                    out = tmp;
-//                    min = distance;
-//                }
-//            }
-//            if (map[row_upperbound][i] == square)
-//            {
-//                tmp = {row_upperbound, i};
-//                distance = measureDistance(tmp, base);
-//                if (distance < min)
-//                {
-//                    out = tmp;
-//                    min = distance;
-//                }
-//            }
-//        }
-//        if (min != 500)
-//        {
-//            found = true;
-//        }
-//    }
-//
-//    return out;
-//}
-//
-///**
-// * @brief Método que nos permite imprimir en los mapas lo que vemos
-// * por el sensor de terreno
-// * @param terreno Sensor de terreno
-// * @param st Posición actual
-// * @param map Mapa de casillas
-// * @param prio Mapa de prioridades
-// * @param faulty Determina si nuestro sensor está defectuoso
-// */
-//void ComportamientoJugador::printMap(const vector<unsigned char> & terreno, const State & st, vector<vector<unsigned char>> & map, vector<vector<unsigned int>> & prio, bool faulty)
-//{
-//    int k = 0;
-//    if (map[st.fil][st.col] == '?')
-//    {
-//        map[st.fil][st.col] = terreno[k];
-//        prio[st.fil][st.col] = setPriority(terreno[k]);
-//    }
-//    k++;
-//    switch (st.brujula)
-//    {
-//        case norte:
-//            for (int i = 1; i < 4; i++)
-//            {
-//                for (int j = 1; j < 2*i+2; j++)
-//                {
-//                    if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
-//                    {
-//                        k++;
-//                        continue;
-//                    }
-//
-//                    if (map[st.fil - i][st.col - i - 1 + j] == '?')
-//                    {
-//                        map[st.fil - i][st.col - i - 1 + j] = terreno[k];
-//                        prio[st.fil - i][st.col - i - 1 + j] = setPriority(terreno[k]);
-//                    }
-//                    k++;
-//                }
-//            }  
-//        break;
-//        case noreste:
-//            for (int i = 1; i < 4; i++)
-//            {
-//                for (int j = 1; j < 2*i + 2; j++)
-//                {
-//                    if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
-//                    {
-//                        k++;
-//                        continue;
-//                    }
-//
-//                    if (j < i + 1)
-//                    {
-//                        if (map[st.fil - i][st.col + j - 1] == '?')
-//                        {
-//                            map[st.fil - i][st.col + j - 1] = terreno[k];
-//                            prio[st.fil - i][st.col + j - 1] = setPriority(terreno[k]);
-//                        }
-//                        k++;
-//                    }
-//                    else
-//                    {
-//                        if (map[st.fil - i - i - 1 + j][st.col + i] == '?')
-//                        {
-//                            map[st.fil - i - i - 1 + j][st.col + i] = terreno[k];
-//                            prio[st.fil - i - i - 1 + j][st.col + i] = setPriority(terreno[k]);
-//                        }
-//                        k++;
-//                    }  
-//                }
-//            }     
-//        break;
-//        case este:
-//            for (int i = 1; i < 4; i++)
-//            {
-//                for (int j = 1; j < 2*i+2; j++)
-//                {
-//                    if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
-//                    {
-//                        k++;
-//                        continue;
-//                    }
-//
-//                    if (map[st.fil - i - 1 + j][st.col + i] == '?')
-//                    {
-//                        map[st.fil - i - 1 + j][st.col + i] = terreno[k];
-//                        prio[st.fil - i - 1 + j][st.col + i] = setPriority(terreno[k]);
-//                    }
-//                    k++;
-//                }
-//            }      
-//        break;
-//        case sureste:
-//        for (int i = 1; i < 4; i++)
-//        {
-//          for (int j = 1; j < 2*i+2; j++)
-//          {
-//            if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
-//            {
-//                k++;
-//                continue;
-//            }
-//
-//            if (j < i + 1)
-//            {
-//                if (map[st.fil + j - 1][st.col + i] == '?')
-//                {
-//                    map[st.fil + j - 1][st.col + i] = terreno[k];
-//                    prio[st.fil + j - 1][st.col + i] = setPriority(terreno[k]);
-//                }
-//                k++;
-//            }
-//            else
-//            {
-//                if (map[st.fil + i][st.col + i + i + 1 - j] == '?')
-//                {
-//                    map[st.fil + i][st.col + i + i + 1 - j] = terreno[k];
-//                    prio[st.fil + i][st.col + i + i + 1 - j] = setPriority(terreno[k]);
-//                }
-//                k++;
-//            }
-//          }
-//        }    
-//        break;
-//        case sur:
-//            for (int i = 1; i < 4; i++)
-//            {
-//                for (int j = 1; j < 2*i+2; j++)
-//                {
-//                    if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
-//                    {
-//                        k++;
-//                        continue;
-//                    }
-//                    
-//                    if (map[st.fil + i][st.col + i + 1 - j] == '?')
-//                    {
-//                        map[st.fil + i][st.col + i + 1 - j] = terreno[k];
-//                        prio[st.fil + i][st.col + i + 1 - j] = setPriority(terreno[k]);
-//                    }
-//                    k++;
-//                }
-//            }
-//        break;
-//        case suroeste:
-//            for (int i = 1; i < 4; i++)
-//            {
-//              for (int j = 1; j < 2*i+2; j++)
-//              {
-//                if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
-//                {
-//                    k++;
-//                    continue;
-//                }
-//
-//                if (j < i + 1)
-//                {
-//                    if (map[st.fil + i][st.col - j + 1] == '?')
-//                    {
-//                        map[st.fil + i][st.col - j + 1] = terreno[k];
-//                        prio[st.fil + i][st.col - j + 1] = setPriority(terreno[k]);
-//                    }
-//                    k++;
-//                }
-//                else
-//                {
-//                    if (map[st.fil + i + i + 1 - j][st.col - i] == '?')
-//                    {
-//                        map[st.fil + i + i + 1 - j][st.col - i] = terreno[k];
-//                        prio[st.fil + i + i + 1 - j][st.col - i] = setPriority(terreno[k]);
-//                    }
-//                    k++;
-//                }
-//              }
-//            }    
-//        break;
-//        case oeste:
-//            for (int i = 1; i < 4; i++)
-//            {
-//                for (int j = 1; j < 2*i+2; j++)
-//                {
-//                    if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
-//                    {
-//                        k++;
-//                        continue;
-//                    }
-//
-//                    if (map[st.fil + i + 1 - j][st.col - i] == '?')
-//                    {
-//                        map[st.fil + i + 1 - j][st.col - i] = terreno[k];
-//                        prio[st.fil + i + 1 - j][st.col - i] = setPriority(terreno[k]);
-//                    }
-//                    k++;
-//                }
-//            }
-//        break;
-//        case noroeste:
-//        for (int i = 1; i < 4; i++)
-//        {
-//          for (int j = 1; j < 2*i+2; j++)
-//          {
-//            if (faulty && (k == 6 || k == 11 || k == 12 || k == 13))
-//            {
-//                k++;
-//                continue;
-//            }
-//
-//            if (j < i + 1)
-//            {
-//                if (map[st.fil - j + 1][st.col - i] == '?')
-//                {
-//                    map[st.fil - j + 1][st.col - i] = terreno[k];
-//                    prio[st.fil - j + 1][st.col - i] = setPriority(terreno[k]);
-//                }
-//                k++;
-//            }
-//            else
-//            {
-//                if (map[st.fil - i][st.col - i - i - 1 + j] == '?')
-//                {
-//                    map[st.fil - i][st.col - i - i - 1 + j] = terreno[k];
-//                    prio[st.fil - i][st.col - i - i - 1 + j] = setPriority(terreno[k]);
-//                }
-//                k++;
-//            }
-//          }
-//        }  
-//        break;
-//    }
-//}
-
-/**
- * @brief Método de reset del agente
- */
-void ComportamientoJugador::resetState()
-{
-    current_state.jugador.f = 99;
-    current_state.jugador.c = 99;
-    current_state.jugador.brujula = norte;
-    current_state.colaborador.f = 99;
-    current_state.colaborador.c = 99;
-    current_state.colaborador.brujula = norte;
-    current_state.ultimaOrdenColaborador = act_CLB_STOP;
-    current_state.bikini_j = false;
-    current_state.zapatillas_j = false;
-    current_state.bikini_c = false;
-    current_state.zapatillas_c = false;
-    last_action = actIDLE;
-    bien_situado = false;
-    bikini = false;
-    zapatillas = false;
-    reload = false;
-    need_reload = false;
-    goto_objective = false;
-    wall_protocol = false;
-    faulty = false;
-    desperate = false;
-    random = false;
 }
 
 int ComportamientoJugador::interact(Action accion, int valor)
