@@ -39,6 +39,14 @@ ubicacion nextSquare(const ubicacion & pos){
 	return next;
 }
 
+/**
+ * @brief 
+ * @param st 
+ * @param map 
+ * @param bikini 
+ * @param zapatillas 
+ * @return 
+ */
 ubicacion applyLastAction(const state & st, const vector<vector<unsigned char>> & map, bool & bikini, bool & zapatillas)
 {
     ubicacion next_square, outcome = st.colaborador;
@@ -269,6 +277,10 @@ void ComportamientoJugador::VisualizaPlan(const state &st, const list<Action> &p
 	}
 }
 
+/**
+ * @brief 
+ * @param plan 
+ */
 void PintaPlan(const list<Action> &plan)
 {
 	auto it = plan.begin();
@@ -292,7 +304,7 @@ void PintaPlan(const list<Action> &plan)
 }
 
 /**
- * @brief Tercera aproximación a la implementación de la búsqueda en anchura
+ * @brief Implementación del algoritmo Búsqueda en Anchura para 
  * @param inicio 
  * @param final 
  * @param mapa 
@@ -381,64 +393,70 @@ list<Action> AgentBreadthFirstSearch(const state &inicio, const ubicacion &final
     if (SolutionFound)
     {
         plan = current_node.secuencia;
-        cout << "Encontrado un plan: ";
-        PintaPlan(plan);
+        //cout << "Encontrado un plan: ";
+        //PintaPlan(plan);
     }
 	
 	return plan;
 }
 
-bool colaboratorInSight(const state & st)
+/**
+ * @brief 
+ * @param st 
+ * @param sq 
+ * @return 
+ */
+bool squareInSight(const state & st, const ubicacion & sq)
 {
     int fdiff, cdiff;
     vector<int> offset = {1, 2, 3};
     switch (st.jugador.brujula)
     {
         case norte:
-            fdiff = st.jugador.f - st.colaborador.f;
-            cdiff = abs(st.jugador.c - st.colaborador.c);
+            fdiff = st.jugador.f - sq.f;
+            cdiff = abs(st.jugador.c - sq.c);
             return (0 < fdiff && fdiff < 4 && cdiff < offset[fdiff-1]+1);
         break;
         case noreste:
-            fdiff = st.jugador.f - st.colaborador.f;
-            cdiff = st.colaborador.c - st.jugador.c;
+            fdiff = st.jugador.f - sq.f;
+            cdiff = sq.c - st.jugador.c;
             return (0 <= fdiff && fdiff < 4 && 0 <= cdiff && cdiff < 4);
         break;
         case este:
-            fdiff = abs(st.jugador.f - st.colaborador.f);
-            cdiff = st.colaborador.c - st.jugador.c;
+            fdiff = abs(st.jugador.f - sq.f);
+            cdiff = sq.c - st.jugador.c;
             return (0 < cdiff && cdiff < 4 && fdiff < offset[cdiff-1]+1);
         break;
         case sureste:
-            fdiff = st.colaborador.f - st.jugador.f;
-            cdiff = st.colaborador.c - st.jugador.c;
+            fdiff = sq.f - st.jugador.f;
+            cdiff = sq.c - st.jugador.c;
             return (0 <= fdiff && fdiff < 4 && 0 <= cdiff && cdiff < 4);
         break;
         case sur:
-            fdiff = st.colaborador.f - st.jugador.f;
-            cdiff = abs(st.jugador.c - st.colaborador.c);
+            fdiff = sq.f - st.jugador.f;
+            cdiff = abs(st.jugador.c - sq.c);
             return (0 < fdiff && fdiff < 4 && cdiff < offset[fdiff-1]+1);
         break;
         case suroeste:
-            fdiff = st.colaborador.f - st.jugador.f;
-            cdiff = st.jugador.c - st.colaborador.c;
+            fdiff = sq.f - st.jugador.f;
+            cdiff = st.jugador.c - sq.c;
             return (0 <= fdiff && fdiff < 4 && 0 <= cdiff && cdiff < 4);
         break;
         case oeste:
-            fdiff = abs(st.jugador.f - st.colaborador.f);
-            cdiff = st.jugador.c - st.colaborador.c;
+            fdiff = abs(st.jugador.f - sq.f);
+            cdiff = st.jugador.c - sq.c;
             return (0 < cdiff && cdiff < 4 && fdiff < offset[cdiff-1]+1);
         break;
         case noroeste:
-            fdiff = st.jugador.f - st.colaborador.f;
-            cdiff = st.jugador.c - st.colaborador.c;
+            fdiff = st.jugador.f - sq.f;
+            cdiff = st.jugador.c - sq.c;
             return (0 <= fdiff && fdiff < 4 && 0 <= cdiff && cdiff < 4);
         break;
     }
 }
 
 /**
- * @brief Algoritmo de búsqueda en anchura para el colaborador
+ * @brief Implementación del algoritmo Búsqueda en Anchura
  * @param inicio 
  * @param final 
  * @param mapa 
@@ -513,7 +531,7 @@ list<Action> ColaboratorBreadthFirstSearch(const state &inicio, const ubicacion 
             }
         }
 
-        if (colaboratorInSight(current_node.st))
+        if (squareInSight(current_node.st, current_node.st.colaborador))
         {
 		    // Generar hijo act_CLB_WALK
 		    nodeN1 child_clbwalk = current_node;
@@ -564,13 +582,21 @@ list<Action> ColaboratorBreadthFirstSearch(const state &inicio, const ubicacion 
     if (solution_found)
     {
         plan = current_node.secuencia;
-        cout << "Encontrado un plan: ";
-        PintaPlan(plan);
+        //cout << "Encontrado un plan: ";
+        //PintaPlan(plan);
     }
 	
 	return plan;
 }
 
+/**
+ * @brief 
+ * @param a 
+ * @param st 
+ * @param map 
+ * @param player 
+ * @return 
+ */
 int actionCost(const Action & a, const state & st, const vector<vector<unsigned char>> & map, bool player)
 {
     char square = (player ? map[st.jugador.f][st.jugador.c] : map[st.colaborador.f][st.colaborador.c]);
@@ -640,7 +666,7 @@ int actionCost(const Action & a, const state & st, const vector<vector<unsigned 
 }
 
 /**
- * @brief Algoritmo de búsqueda en anchura para el colaborador
+ * @brief Implementación del Algoritmo de Coste Uniforme
  * @param inicio 
  * @param final 
  * @param mapa 
@@ -666,7 +692,6 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
 		frontier.pop();
         explored.insert(current_node.st);
 
-        // TODO Comprobar si es solucion cuando lo popeamos de la cola
         if (current_node.st.jugador.f == final.f && current_node.st.jugador.c == final.c)
         {
             solution_found = true;
@@ -711,7 +736,6 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
 			}
 		}
 
-        // TODO ¿Es así cómo evitamos los repetidos en abiertos?
 		if (!solution_found && !frontier.empty())
         {
             current_node = frontier.top();
@@ -722,30 +746,46 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
                     current_node = frontier.top();
             }
         }
-
-        // TODO Cuando no podemos avanzar (nos quedamos en la misma
-        // posición por la función apply) ese estado se mete en abiertos
-        // igualmente y luego supongo que es descartado al tener en
-        // cuenta los repetidos
-			
 	}
     if (solution_found)
     {
         plan = current_node.secuencia;
-        cout << "Encontrado un plan: ";
-        PintaPlan(plan);
+        //cout << "Encontrado un plan: ";
+        //PintaPlan(plan);
     }
 	
 	return plan;
 }
 
-// DISTANCIA DE CHEBYSHOV
-int heuristicCost(const state & st, const ubicacion & goal)
+/**
+ * @brief Método que nos permite medir la distancia entre dos casillas
+ * haciendo uso de la distancia de Chebyshov
+ * @param sq1 Casilla a medir distancia
+ * @param sq2 Casilla a medir distancia
+ * @return Distancia entre ambas casillas
+ */
+int measureDistance(const ubicacion & sq1, const ubicacion & sq2)
 {
-    ubicacion u = st.colaborador;
-    return max(abs(goal.f - u.f), abs(goal.c - u.c));
+    return max(abs(sq1.f - sq2.f),  abs(sq1.c - sq2.c));
 }
 
+/**
+ * @brief 
+ * @param u 
+ * @param goal 
+ * @return 
+ */
+int heuristicCost(const ubicacion & u, const ubicacion & goal)
+{
+    return measureDistance(u, goal);
+}
+
+/**
+ * @brief 
+ * @param st 
+ * @param map 
+ * @return 
+ */
 int lastActionCost(const state & st, const vector<vector<unsigned char>> & map)
 {
     bool colaborator = false;
@@ -753,7 +793,7 @@ int lastActionCost(const state & st, const vector<vector<unsigned char>> & map)
 }
 
 /**
- * @brief Algoritmo de búsqueda en anchura para el colaborador
+ * @brief Implementación del Algoritmo A* para 
  * @param inicio 
  * @param final 
  * @param mapa 
@@ -768,7 +808,7 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 
     current_node.st = start;
     current_node.accumulated_cost = 0;
-    current_node.heuristic = heuristicCost(current_node.st, goal);
+    current_node.heuristic = heuristicCost(current_node.st.colaborador, goal);
 
     bool solution_found = (current_node.st.colaborador.f == goal.f && current_node.st.colaborador.c == goal.c);
     bool player = true;
@@ -783,7 +823,6 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 
         if (current_node.st.colaborador.f == goal.f && current_node.st.colaborador.c == goal.c)
         {
-            cout << current_node.accumulated_cost << endl;
 			solution_found = true;
 		}
         else
@@ -792,7 +831,7 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
             nodeN3 child_walk = current_node;
             child_walk.accumulated_cost += actionCost(actWALK, current_node.st, map, player) + lastActionCost(current_node.st, map);
             child_walk.st = apply(actWALK, current_node.st, map);
-            child_walk.heuristic = heuristicCost(child_walk.st, goal);
+            child_walk.heuristic = heuristicCost(child_walk.st.colaborador, goal);
             child_walk.secuencia.push_back(actWALK);
             if (explored.find(child_walk.st) == explored.end())
             {
@@ -802,7 +841,7 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 		    nodeN3 child_run = current_node;
             child_run.accumulated_cost += actionCost(actRUN, current_node.st, map, player) + lastActionCost(current_node.st, map);
             child_run.st = apply(actRUN, current_node.st, map);
-            child_run.heuristic = heuristicCost(child_run.st, goal);
+            child_run.heuristic = heuristicCost(child_run.st.colaborador, goal);
             child_run.secuencia.push_back(actRUN);
 		    if (explored.find(child_run.st) == explored.end())
             {
@@ -812,7 +851,7 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 		    nodeN3 child_turnl = current_node;
             child_turnl.accumulated_cost += actionCost(actTURN_L, current_node.st, map, player) + lastActionCost(current_node.st, map);
             child_turnl.st = apply(actTURN_L, current_node.st, map);
-            child_turnl.heuristic = heuristicCost(child_turnl.st, goal);
+            child_turnl.heuristic = heuristicCost(child_turnl.st.colaborador, goal);
             child_turnl.secuencia.push_back(actTURN_L);
             if (explored.find(child_turnl.st) == explored.end())
             {
@@ -822,7 +861,7 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 		    nodeN3 child_turnsr = current_node;
             child_turnsr.accumulated_cost += actionCost(actTURN_SR, current_node.st, map, player) + lastActionCost(current_node.st, map);
             child_turnsr.st = apply(actTURN_SR, current_node.st, map);
-            child_turnsr.heuristic = heuristicCost(child_turnsr.st, goal);
+            child_turnsr.heuristic = heuristicCost(child_turnsr.st.colaborador, goal);
             child_turnsr.secuencia.push_back(actTURN_SR);
             if (explored.find(child_turnsr.st) == explored.end())
             {
@@ -834,20 +873,20 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
                 nodeN3 child_idle = current_node;
                 child_idle.accumulated_cost += actionCost(actIDLE, current_node.st, map, player) + lastActionCost(current_node.st, map);
                 child_idle.st = apply(actIDLE, current_node.st, map);
-                child_idle.heuristic = heuristicCost(child_idle.st, goal);
+                child_idle.heuristic = heuristicCost(child_idle.st.colaborador, goal);
                 child_idle.secuencia.push_back(actIDLE);
                 if (explored.find(child_idle.st) == explored.end())
                 {
                     frontier.push(child_idle);
                 }
             }
-            if (colaboratorInSight(current_node.st))
+            if (squareInSight(current_node.st, current_node.st.colaborador))
             {
 		        // Generar hijo act_CLB_WALK
 		        nodeN3 child_clbwalk = current_node;
                 child_clbwalk.accumulated_cost += actionCost(act_CLB_WALK, current_node.st, map, colaborator);
                 child_clbwalk.st = apply(act_CLB_WALK, current_node.st, map);
-                child_clbwalk.heuristic = heuristicCost(child_clbwalk.st, goal);
+                child_clbwalk.heuristic = heuristicCost(child_clbwalk.st.colaborador, goal);
                 child_clbwalk.secuencia.push_back(act_CLB_WALK);
 		        if (explored.find(child_clbwalk.st) == explored.end())
                 {
@@ -857,7 +896,7 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 		        nodeN3 child_clbturn = current_node;
                 child_clbturn.accumulated_cost += actionCost(act_CLB_TURN_SR, current_node.st, map, colaborator);
                 child_clbturn.st = apply(act_CLB_TURN_SR, current_node.st, map);
-                child_clbturn.heuristic = heuristicCost(child_clbturn.st, goal);
+                child_clbturn.heuristic = heuristicCost(child_clbturn.st.colaborador, goal);
                 child_clbturn.secuencia.push_back(act_CLB_TURN_SR);
 		        if (explored.find(child_clbturn.st) == explored.end())
                 {
@@ -867,7 +906,7 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 		        nodeN3 child_clbstop = current_node;
                 child_clbstop.accumulated_cost += actionCost(act_CLB_STOP, current_node.st, map, colaborator);
                 child_clbstop.st = apply(act_CLB_STOP, current_node.st, map);
-                child_clbstop.heuristic = heuristicCost(child_clbstop.st, goal);
+                child_clbstop.heuristic = heuristicCost(child_clbstop.st.colaborador, goal);
                 child_clbstop.secuencia.push_back(act_CLB_STOP);
 		        if (explored.find(child_clbstop.st) == explored.end())
                 {
@@ -891,8 +930,289 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
     if (solution_found)
     {
         plan = current_node.secuencia;
-        cout << "Encontrado un plan: ";
-        PintaPlan(plan);
+        //cout << "Encontrado un plan: ";
+        //PintaPlan(plan);
+    }
+	
+	return plan;
+}
+
+/**
+ * @brief Implementación del Algoritmo A*
+ * @param inicio 
+ * @param final 
+ * @param mapa 
+ * @return 
+ */
+list<Action> AgentAStarSearch(const state &start, const ubicacion &goal, const vector<vector<unsigned char>> &map)
+{
+	nodeN3 current_node;
+	priority_queue<nodeN3> frontier;
+	set<state> explored;
+    list<Action> plan;
+
+    current_node.st = start;
+    current_node.accumulated_cost = 0;
+    current_node.heuristic = heuristicCost(current_node.st.jugador, goal);
+
+    bool solution_found = (current_node.st.jugador.f == goal.f && current_node.st.jugador.c == goal.c);
+    bool player = true;
+
+	frontier.push(current_node);
+
+	while (!frontier.empty() && !solution_found)
+    {
+		frontier.pop();
+        explored.insert(current_node.st);
+
+        if (current_node.st.jugador.f == goal.f && current_node.st.jugador.c == goal.c)
+        {
+			solution_found = true;
+		}
+        else
+        {
+            // Generar hijo actWALK
+            nodeN3 child_walk = current_node;
+            child_walk.accumulated_cost += actionCost(actWALK, current_node.st, map, player) + lastActionCost(current_node.st, map);
+            child_walk.st = apply(actWALK, current_node.st, map);
+            child_walk.heuristic = heuristicCost(child_walk.st.jugador, goal);
+            child_walk.secuencia.push_back(actWALK);
+            if (explored.find(child_walk.st) == explored.end())
+            {
+		    	frontier.push(child_walk);
+		    }
+            // Generar hijo actRUN
+		    nodeN3 child_run = current_node;
+            child_run.accumulated_cost += actionCost(actRUN, current_node.st, map, player) + lastActionCost(current_node.st, map);
+            child_run.st = apply(actRUN, current_node.st, map);
+            child_run.heuristic = heuristicCost(child_run.st.jugador, goal);
+            child_run.secuencia.push_back(actRUN);
+		    if (explored.find(child_run.st) == explored.end())
+            {
+		    	frontier.push(child_run);
+		    }
+		    // Generar hijo actTURN_L
+		    nodeN3 child_turnl = current_node;
+            child_turnl.accumulated_cost += actionCost(actTURN_L, current_node.st, map, player) + lastActionCost(current_node.st, map);
+            child_turnl.st = apply(actTURN_L, current_node.st, map);
+            child_turnl.heuristic = heuristicCost(child_turnl.st.jugador, goal);
+            child_turnl.secuencia.push_back(actTURN_L);
+            if (explored.find(child_turnl.st) == explored.end())
+            {
+		    	frontier.push(child_turnl);
+		    }		
+		    // Generar hijo actTURN_SR
+		    nodeN3 child_turnsr = current_node;
+            child_turnsr.accumulated_cost += actionCost(actTURN_SR, current_node.st, map, player) + lastActionCost(current_node.st, map);
+            child_turnsr.st = apply(actTURN_SR, current_node.st, map);
+            child_turnsr.heuristic = heuristicCost(child_turnsr.st.jugador, goal);
+            child_turnsr.secuencia.push_back(actTURN_SR);
+            if (explored.find(child_turnsr.st) == explored.end())
+            {
+		    	frontier.push(child_turnsr);
+		    }
+        }
+
+		if (!solution_found && !frontier.empty())
+        {
+            current_node = frontier.top();
+            while (!frontier.empty() && explored.find(current_node.st) != explored.end())
+            {
+                frontier.pop();
+                if (!frontier.empty())
+                    current_node = frontier.top();
+            }
+        }
+			
+	}
+    if (solution_found)
+    {
+        plan = current_node.secuencia;
+        //cout << "Encontrado un plan: ";
+        //PintaPlan(plan);
+    }
+	
+	return plan;
+}
+
+
+/**
+ * @brief Implementación del Algoritmo A* para
+ * @param start
+ * @param map 
+ * @return 
+ */
+list<Action> GoToColaboratorAStarSearch(const state &start, const vector<vector<unsigned char>> &map)
+{
+	nodeN3 current_node;
+	priority_queue<nodeN3> frontier;
+	set<state> explored;
+    list<Action> plan;
+
+    current_node.st = start;
+    current_node.accumulated_cost = 0;
+    current_node.heuristic = heuristicCost(current_node.st.jugador, current_node.st.colaborador);
+
+    bool solution_found = squareInSight(current_node.st, current_node.st.colaborador) && squareInSight(current_node.st, nextSquare(current_node.st.colaborador));
+    bool player = true;
+
+	frontier.push(current_node);
+
+	while (!frontier.empty() && !solution_found)
+    {
+		frontier.pop();
+        explored.insert(current_node.st);
+
+        if (squareInSight(current_node.st, current_node.st.colaborador) && squareInSight(current_node.st, nextSquare(current_node.st.colaborador)))
+        {
+			solution_found = true;
+		}
+        else
+        {
+            // Generar hijo actWALK
+            nodeN3 child_walk = current_node;
+            child_walk.accumulated_cost += actionCost(actWALK, current_node.st, map, player) + lastActionCost(current_node.st, map);
+            child_walk.st = apply(actWALK, current_node.st, map);
+            child_walk.heuristic = heuristicCost(child_walk.st.jugador, current_node.st.colaborador);
+            child_walk.secuencia.push_back(actWALK);
+            if (explored.find(child_walk.st) == explored.end())
+            {
+		    	frontier.push(child_walk);
+		    }
+            // Generar hijo actRUN
+		    nodeN3 child_run = current_node;
+            child_run.accumulated_cost += actionCost(actRUN, current_node.st, map, player) + lastActionCost(current_node.st, map);
+            child_run.st = apply(actRUN, current_node.st, map);
+            child_run.heuristic = heuristicCost(child_run.st.jugador, current_node.st.colaborador);
+            child_run.secuencia.push_back(actRUN);
+		    if (explored.find(child_run.st) == explored.end())
+            {
+		    	frontier.push(child_run);
+		    }
+		    // Generar hijo actTURN_L
+		    nodeN3 child_turnl = current_node;
+            child_turnl.accumulated_cost += actionCost(actTURN_L, current_node.st, map, player) + lastActionCost(current_node.st, map);
+            child_turnl.st = apply(actTURN_L, current_node.st, map);
+            child_turnl.heuristic = heuristicCost(child_turnl.st.jugador, current_node.st.colaborador);
+            child_turnl.secuencia.push_back(actTURN_L);
+            if (explored.find(child_turnl.st) == explored.end())
+            {
+		    	frontier.push(child_turnl);
+		    }		
+		    // Generar hijo actTURN_SR
+		    nodeN3 child_turnsr = current_node;
+            child_turnsr.accumulated_cost += actionCost(actTURN_SR, current_node.st, map, player) + lastActionCost(current_node.st, map);
+            child_turnsr.st = apply(actTURN_SR, current_node.st, map);
+            child_turnsr.heuristic = heuristicCost(child_turnsr.st.jugador, current_node.st.colaborador);
+            child_turnsr.secuencia.push_back(actTURN_SR);
+            if (explored.find(child_turnsr.st) == explored.end())
+            {
+		    	frontier.push(child_turnsr);
+		    }
+        }
+
+		if (!solution_found && !frontier.empty())
+        {
+            current_node = frontier.top();
+            while (!frontier.empty() && explored.find(current_node.st) != explored.end())
+            {
+                frontier.pop();
+                if (!frontier.empty())
+                    current_node = frontier.top();
+            }
+        }
+			
+	}
+    if (solution_found)
+    {
+        plan = current_node.secuencia;
+        //cout << "Encontrado un plan: ";
+        //PintaPlan(plan);
+    }
+	
+	return plan;
+}
+
+/**
+ * @brief Implementación del Algoritmo A* para
+ * @param start 
+ * @param goal 
+ * @param map
+ * @return 
+ */
+list<Action> OnlyColaboratorAStarSearch(const state &start, const ubicacion &goal, const vector<vector<unsigned char>> &map, bool & success)
+{
+    int counter = 0;
+	nodeN3 current_node;
+	priority_queue<nodeN3> frontier;
+	set<state> explored;
+    list<Action> plan;
+
+    current_node.st = start;
+    current_node.accumulated_cost = 0;
+    current_node.heuristic = heuristicCost(current_node.st.colaborador, goal);
+
+    bool solution_found = (current_node.st.colaborador.f == goal.f && current_node.st.colaborador.c == goal.c);
+    bool player = true;
+    bool colaborator = false;
+
+	frontier.push(current_node);
+
+	while (!frontier.empty() && !solution_found)
+    {
+		frontier.pop();
+        explored.insert(current_node.st);
+
+        if (current_node.st.colaborador.f == goal.f && current_node.st.colaborador.c == goal.c)
+        {
+			solution_found = true;
+		}
+        else
+        {
+            counter++;
+		    // Generar hijo act_CLB_WALK
+		    nodeN3 child_clbwalk = current_node;
+            child_clbwalk.accumulated_cost += actionCost(act_CLB_WALK, current_node.st, map, colaborator);
+            child_clbwalk.st = apply(act_CLB_WALK, current_node.st, map);
+            child_clbwalk.heuristic = heuristicCost(child_clbwalk.st.colaborador, goal);
+            child_clbwalk.secuencia.push_back(act_CLB_WALK);
+		    if (explored.find(child_clbwalk.st) == explored.end())
+            {
+		    	frontier.push(child_clbwalk);
+		    }
+            // Generar hijo act_CLB_TURN_SR
+		    nodeN3 child_clbturn = current_node;
+            child_clbturn.accumulated_cost += actionCost(act_CLB_TURN_SR, current_node.st, map, colaborator);
+            child_clbturn.st = apply(act_CLB_TURN_SR, current_node.st, map);
+            child_clbturn.heuristic = heuristicCost(child_clbturn.st.colaborador, goal);
+            child_clbturn.secuencia.push_back(act_CLB_TURN_SR);
+		    if (explored.find(child_clbturn.st) == explored.end())
+            {
+		    	frontier.push(child_clbturn);
+		    }
+        }
+
+		if (!solution_found && !frontier.empty())
+        {
+            current_node = frontier.top();
+            while (!frontier.empty() && explored.find(current_node.st) != explored.end())
+            {
+                frontier.pop();
+                if (!frontier.empty())
+                    current_node = frontier.top();
+            }
+        }
+			
+	}
+    if (solution_found)
+    {
+        plan = current_node.secuencia;
+        //cout << "Encontrado un plan: ";
+        //PintaPlan(plan);
+    }
+    else
+    {
+        success = true;
     }
 	
 	return plan;
@@ -984,23 +1304,20 @@ Action ComportamientoJugador::think(Sensores sensores)
     }
     else
     {
-        // Incluir solución al nivel 4
         Movement move;
         // Fase de observación
-        switch (last_action)
+        if (last_action == actWHEREIS)
         {
-            // TODO: Podríamos modificar el apply añadiendole el case actWhereis
-            case actWHEREIS:
-                current_state.jugador.f = sensores.posF;
-                current_state.jugador.c = sensores.posC;
-                current_state.jugador.brujula = sensores.sentido;
-                current_state.colaborador.f = sensores.CLBposF;
-                current_state.colaborador.c = sensores.CLBposC;
-                current_state.colaborador.brujula = sensores.CLBsentido;
-            break;
-            default:
-                current_state = apply(last_action, current_state, mapaResultado);
-            break;
+            current_state.jugador.f = sensores.posF;
+            current_state.jugador.c = sensores.posC;
+            current_state.jugador.brujula = sensores.sentido;
+            current_state.colaborador.f = sensores.CLBposF;
+            current_state.colaborador.c = sensores.CLBposC;
+            current_state.colaborador.brujula = sensores.CLBsentido;
+        }
+        else
+        {
+            current_state = apply(last_action, current_state, mapaResultado);
         }
 
         if (current_state.jugador.f == -1 && current_state.jugador.c == -1)
@@ -1018,14 +1335,15 @@ Action ComportamientoJugador::think(Sensores sensores)
         switch (sensores.terreno[0])
         {
             case 'X':
+                seen_reload = true;
                 need_reload = false;
                 // Nos esperamos hasta que recarguemos suficientemente la batería
-                if (sensores.vida < HEALTH_DESPERATE_THRESH && sensores.bateria < DESPERATE_RELOAD_THRESH)
+                if (sensores.vida < HEALTH_DESPERATE_THRESH && sensores.bateria < RELOAD_DESPERATE_THRESH)
                 {
                     last_action = action;
                     return action;
                 }
-                else if (sensores.vida < HEALTH_MODERATE_THRESH && sensores.bateria < QUICK_RELOAD_THRESH)
+                else if (sensores.vida < HEALTH_MODERATE_THRESH && sensores.bateria < RELOAD_MODERATE_THRESH)
                 {
                     last_action = action;
                     return action;
@@ -1038,10 +1356,34 @@ Action ComportamientoJugador::think(Sensores sensores)
             break;
         }
 
-        if (!need_replan)
+        if (sensores.CLBgoal && move_colaborator)
+        {
+            cout << "-----> Casilla objetivo alcanzada por el colaborador" << endl;
+            move_colaborator = false;
+            goto_colaborator = false;
+            exists_plan = false;
+            exists_clb_plan = false;
+            goal.f = sensores.destinoF;
+            goal.c = sensores.destinoC;
+            action = act_CLB_STOP;
+            last_action = action;
+            return action;
+        }
+        else if (current_state.jugador.f == goal.f && current_state.jugador.c == goal.c)
+        {
+            goal.f = sensores.destinoF;
+            goal.c = sensores.destinoC;
+            move_colaborator = false;
+            goto_colaborator = false;
+            exists_plan = false;
+            exists_clb_plan = false;
+        }
+
+        // Si existe un plan y no hemos replanificado previamente checkeamos posibles replanificaciones
+        if (exists_plan && !need_replan)
         {
             // Si nos vamos a chocar con un muro
-            if (detectWalls(sensores.terreno))
+            if (detectObstacle(sensores.terreno))
             {
                 need_replan = true;
             }
@@ -1056,97 +1398,124 @@ Action ComportamientoJugador::think(Sensores sensores)
                 need_replan = true;
             }
             // Si hemos visto previamente una casilla de recarga y necesitamos recargar
-            else if ((reload || detectReload(sensores.terreno)) && sensores.bateria < BATTERY_THRESH)
+            else if ((seen_reload || detectReload(sensores.terreno)) && sensores.bateria < BATTERY_THRESH)
             {
                 goal = searchSquare(mapaResultado, 'X');
                 // Si está relativamente cerca de nuestra posición vamos a por ella
-                if (measureDistance(current_state.jugador, goal) < 25)
+                if (measureDistance(current_state.jugador, goal) < 50)
                 {
                     need_replan = true;
+                    need_reload = true;
                 }
             }
         }
-        else
-        {
-            need_replan = false;
-        }
 
-        if (need_replan)
+        // Si el colaborador está cerca del objetivo hacemos que el jugador vaya hacia el
+        if (!need_reload && !goto_colaborator && !move_colaborator && 0 < measureDistance(current_state.colaborador, goal) && measureDistance(current_state.colaborador, goal) < 5)
         {
-            plan = AgentUniformCostSearch(current_state, goal, mapaResultado);
+            plan = GoToColaboratorAStarSearch(current_state, mapaResultado);
+            clb_plan = OnlyColaboratorAStarSearch(current_state, goal, mapaResultado, force_player);
+            if (plan.size() > 0)
+            {
+                VisualizaPlan(current_state, plan);
+                exists_plan = true;
+            }
+            if (clb_plan.size() > 0)
+            {
+                VisualizaPlan(current_state, clb_plan);
+                exists_clb_plan = true;
+            }
+            goto_colaborator = true;
+        }
+        else if (need_replan && !move_colaborator)
+        {
+            if (goto_colaborator)
+            {
+                plan = GoToColaboratorAStarSearch(current_state, mapaResultado);
+            }
+            else
+            {
+                plan = AgentAStarSearch(current_state, goal, mapaResultado);
+            }
+
+            if (plan.size() > 0)
+            {
+                VisualizaPlan(current_state, plan);
+                exists_plan = true;
+                need_replan = false;
+            }
+        }
+        else if (!exists_plan)
+        {
+            goal.f = sensores.destinoF;
+            goal.c = sensores.destinoC;
+            plan = AgentAStarSearch(current_state, goal, mapaResultado);
             if (plan.size() > 0)
             {
                 VisualizaPlan(current_state, plan);
                 exists_plan = true;
             }
         }
-        else if (exists_plan && plan.size() > 0)
+
+        if (exists_clb_plan && squareInSight(current_state, current_state.colaborador))
+        {
+            ubicacion clb_next_square = nextSquare(current_state.colaborador);
+            // Si la casilla a la que va a avanzar no la conocemos, lo paramos
+            if (clb_plan.front() == act_CLB_WALK && !squareInSight(current_state, clb_next_square))
+            {
+                plan = GoToColaboratorAStarSearch(current_state, mapaResultado);
+                if (current_state.ultimaOrdenColaborador != act_CLB_STOP)
+                {
+                    plan.push_front(act_CLB_STOP);
+                }
+                if (plan.size() > 0)
+                {
+                    VisualizaPlan(current_state, plan);
+                    exists_plan = true;
+                }
+                goto_colaborator = true;
+                move_colaborator = false;
+            }
+            // Si la casilla a la que va a avanzar la conocemos pero no es accesible, lo paramos
+            else if (clb_plan.front() == act_CLB_WALK && !accesibleSquare(clb_next_square, mapaResultado) && clb_next_square.f != current_state.jugador.f && clb_next_square.c != current_state.jugador.c)
+            {
+                action = act_CLB_STOP;
+                clb_plan = OnlyColaboratorAStarSearch(current_state, goal, mapaResultado, force_player);
+                if (clb_plan.size() > 0)
+                {
+                    VisualizaPlan(current_state, clb_plan);
+                    exists_clb_plan = true;
+                }
+            }
+            else if (clb_plan.size() > 0)
+            {
+                move_colaborator = true;
+                goto_colaborator = false;
+                action = clb_plan.front();
+                clb_plan.pop_front();
+            }
+        }
+
+        if (exists_plan && !move_colaborator && plan.size() > 0)
         {
             action = plan.front();
             plan.pop_front();
         }
-        else
-        {
-            goal.f = sensores.destinoF;
-            goal.c = sensores.destinoC;
-            plan = AgentUniformCostSearch(current_state, goal, mapaResultado);
-            if (plan.size() > 0)
-            {
-                VisualizaPlan(current_state, plan);
-                exists_plan = true;
-            }
-        }
+
         if (plan.size() == 0)
         {
-            cout << "Se completó el plan\n";
+            // cout << "Se completó el plan\n";
             exists_plan = false;
+        }
+        if (clb_plan.size() == 0)
+        {
+            //cout << "Colaborador completó el plan\n";
+            exists_clb_plan = false;
         }
     }
     // Devuelve el valor de la acción
     last_action = action;
 	return action;
-}
-
-/**
- * @brief Método que nos permite medir la distancia entre dos casillas
- * haciendo uso de la distancia de Chebyshov
- * @param sq1 Casilla a medir distancia
- * @param sq2 Casilla a medir distancia
- * @return Distancia entre ambas casillas
- */
-int ComportamientoJugador::measureDistance(const ubicacion & sq1, const ubicacion & sq2)
-{
-    return max(abs(sq1.f - sq2.f),  abs(sq1.c - sq2.c));
-}
-
-/**
- * @brief Método que detecta si nos encontramos cerca de un bikini
- * @param terreno Sensores de terreno
- * @return True si lo estamos, False en caso contrario
- */
-bool ComportamientoJugador::detectBikini(const vector<unsigned char> & terreno)
-{
-    for (auto t : terreno)
-    {
-        if (t == 'K')
-            return true;
-    }
-    return false;
-}
-
-/**
- * @brief Método que detecta si nos encontramos cerca de unas zapatillas
- * @param terreno Sensores de terreno
- * @return True si lo estamos, False en caso contrario
- */
-bool ComportamientoJugador::detectZapatillas(const vector<unsigned char> & terreno)
-{
-    for (auto t : terreno)
-    {
-        if (t == 'D')
-            return true;
-    }
-    return false;
 }
 
 /**
@@ -1193,7 +1562,7 @@ bool ComportamientoJugador::detectReload(const vector<unsigned char> & terreno)
         if (t == 'X')
         {
             // Notificamos que hemos visto al menos una casilla de recarga
-            reload = true;
+            seen_reload = true;
             return true;
         }
     }
@@ -1201,37 +1570,14 @@ bool ComportamientoJugador::detectReload(const vector<unsigned char> & terreno)
 }
 
 /**
- * @brief Método que detecta si nos vamos a chocar contra un muro
+ * @brief Método que detecta si nos vamos a chocar contra un muro o nos vamos a caer por un precipicio
  * @param terreno Sensores de terreno
  * @return True si lo estamos, False en caso contrario
  */
-bool ComportamientoJugador::detectWalls(const vector<unsigned char> & terreno)
+bool ComportamientoJugador::detectObstacle(const vector<unsigned char> & terreno)
 {
-    return (terreno[2] == 'M');
+    return (terreno[2] == 'M' || terreno[6] == 'M' || terreno[2] == 'P' || terreno[6] == 'P');
 }
-
-//
-///**
-// * @brief Método que nos permite modificar la prioridad de aquellas
-// * casillas que teniendo el correspondiente objeto especial no nos
-// * resulta tan costoso pisarlas
-// * @param map Mapa de casillas
-// * @param prio Mapa de prioridades
-// */
-//void ComportamientoJugador::modifyPriority(const vector<vector<unsigned char>> & map, vector<vector<unsigned int>> & prio)
-//{
-//    for (int i = 0; i < map.size(); i++)
-//    {
-//        for (int j = 0; j < map[i].size(); j++)
-//        {
-//            if (bikini && map[i][j] == 'A')
-//                prio[i][j] -= 45;
-//
-//            if (zapatillas && map[i][j] == 'B')
-//                prio[i][j] -= 45;
-//        }
-//    }
-//}
 
 /**
  * @brief Método que nos localiza la casilla que buscamos más cercana
@@ -1326,7 +1672,7 @@ ubicacion ComportamientoJugador::searchSquare(const vector<vector<unsigned char>
  * @param st Posición actual
  * @param map Mapa de casillas
  * @param prio Mapa de prioridades
- * @param faulty Determina si nuestro sensor está defectuoso
+ * @param move_colaborator Determina si nuestro sensor está defectuoso
  */
 void ComportamientoJugador::printMap(const vector<unsigned char> & terreno, const state & st, vector<vector<unsigned char>> & map)
 {

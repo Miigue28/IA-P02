@@ -8,12 +8,12 @@
 #include <queue>
 #include <algorithm>
 
-#define BATTERY_THRESH 1000
+#define BATTERY_THRESH 1500
 #define HEALTH_MODERATE_THRESH 1500
 #define HEALTH_DESPERATE_THRESH 1000
 #define RELOAD_THRESH 2500
-#define QUICK_RELOAD_THRESH 1500
-#define DESPERATE_RELOAD_THRESH 1000
+#define RELOAD_MODERATE_THRESH 1500
+#define RELOAD_DESPERATE_THRESH 1000
 
 struct state
 {
@@ -88,14 +88,7 @@ struct nodeN0{
 
 	bool operator<(const nodeN0 &b)  const 
     {
-        if (st.jugador.f < b.st.jugador.f)
-            return true;
-        else if (st.jugador.f == b.st.jugador.f && st.jugador.c < b.st.jugador.c)
-            return true;
-        else if (st.jugador.f == b.st.jugador.f && st.jugador.c == b.st.jugador.c && st.jugador.brujula < b.st.jugador.brujula)
-            return true;
-        else
-            return false;
+        return st < b.st;
 	}
 };
 
@@ -180,14 +173,13 @@ class ComportamientoJugador : public Comportamiento {
         current_state.zapatillas_c = false;
         last_action = actIDLE;
         exists_plan = false;
+        exists_clb_plan = false;
         need_replan = false;
-        reload = false;
+        seen_reload = false;
+        goto_colaborator = false;
+        force_player = false;
         need_reload = false;
-        goto_objective = false;
-        wall_protocol = false;
-        faulty = false;
-        desperate = false;
-        random = false;
+        move_colaborator = false;
     }
     ComportamientoJugador(std::vector<std::vector<unsigned char>> mapaR) : Comportamiento(mapaR) {
         exists_plan = false;
@@ -205,9 +197,8 @@ class ComportamientoJugador : public Comportamiento {
     bool detectReload(const vector<unsigned char> & terreno);
     bool detectForest(const vector<unsigned char> & terreno);
     bool detectOcean(const vector<unsigned char> & terreno);
-    bool detectWalls(const vector<unsigned char> & terreno);
+    bool detectObstacle(const vector<unsigned char> & terreno);
 
-    int measureDistance(const ubicacion & sq1, const ubicacion & sq2);
     ubicacion searchSquare(const vector<vector<unsigned char>> & map, char square);
 
     void VisualizaPlan(const state &st, const list<Action> &plan);
@@ -217,16 +208,16 @@ class ComportamientoJugador : public Comportamiento {
     state current_state;
     Action last_action;
     bool exists_plan;
+    bool exists_clb_plan;
     bool need_replan;
     ubicacion goal;
     list<Action> plan;
-    bool reload;
+    list<Action> clb_plan;
+    bool seen_reload;
+    bool goto_colaborator;
     bool need_reload;
-    bool goto_objective;
-    bool wall_protocol;
-    bool faulty;
-    bool desperate;
-    bool random;
+    bool force_player;
+    bool move_colaborator;
     void printCliffs();
 };
 
