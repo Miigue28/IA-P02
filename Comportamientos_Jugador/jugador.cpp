@@ -7,19 +7,19 @@
 #include <stack>
 
 /**
- * @brief Devuelve si una ubicación en el mapa es transitable para el agente
- * @param x 
- * @param mapa 
- * @return 
+ * @brief Método que devuelve si una ubicación en el mapa es transitable por el agente
+ * @param x Ubicación 
+ * @param map Mapa de casillas
+ * @return True si es transitable, False en caso contrario
 **/
 bool accesibleSquare(const ubicacion & x, const vector<vector<unsigned char> > & map){
 	return (map[x.f][x.c] != 'P' && map[x.f][x.c] != 'M' );
 }
 
 /**
- * @brief Devuelve la ubicación siguiente según el avance del agente
- * @param pos 
- * @return 
+ * @brief Método que devuelve la ubicación siguiente casilla según la orientación del agente
+ * @param pos Posición base a calcular
+ * @return Ubicación relativa a la siguiente casilla
  */
 ubicacion nextSquare(const ubicacion & pos){
 	ubicacion next = pos;
@@ -40,12 +40,12 @@ ubicacion nextSquare(const ubicacion & pos){
 }
 
 /**
- * @brief 
- * @param st 
- * @param map 
- * @param bikini 
- * @param zapatillas 
- * @return 
+ * @brief Método que aplica a un estado la última orden que se le dió al colaborador
+ * @param st Estado base
+ * @param map Mapa de casillas
+ * @param bikini Informa si el colaborador tiene bikini
+ * @param zapatillas Informa si el colaborador tiene zapatillas
+ * @return Estado resultante a aplicar la última orden que se le dió al colaborador
  */
 ubicacion applyLastAction(const state & st, const vector<vector<unsigned char>> & map, bool & bikini, bool & zapatillas)
 {
@@ -73,7 +73,7 @@ ubicacion applyLastAction(const state & st, const vector<vector<unsigned char>> 
 	    	}
         break;
         case act_CLB_TURN_SR:
-            outcome.brujula = static_cast<Orientacion>((outcome.brujula + 1) % 8);
+            outcome.brujula = (Orientacion) ((outcome.brujula + 1) % 8);
         break;
         case act_CLB_STOP:
         break;
@@ -82,12 +82,12 @@ ubicacion applyLastAction(const state & st, const vector<vector<unsigned char>> 
 }
 
 /**
- * @brief Devuelve el estado que se genera si el agente puede avanzar.
- * Si no puede avanzar, devuelve como salida el mismo estado de entrada.
- * @param a 
- * @param st 
- * @param mapa 
- * @return 
+ * @brief Método que devuelve el estado resultante a realizar una determinada acción.
+ * Si no puede aplicarla, devuelve como salida el mismo estado de entrada.
+ * @param a Acción a aplicar
+ * @param st Estado base
+ * @param mapa Mapa de casillas
+ * @return Estado resultante tras realizar la acción
  */
 state apply(const Action & a, const state & st, const vector<vector<unsigned char>> & mapa){
 	state outcome = st;
@@ -114,7 +114,7 @@ state apply(const Action & a, const state & st, const vector<vector<unsigned cha
                 }
 	        	outcome.jugador = next_square;
                 outcome.colaborador = applyLastAction(outcome, mapa, outcome.bikini_c, outcome.zapatillas_c);
-                if (outcome.colaborador == st.colaborador and outcome.ultimaOrdenColaborador == act_CLB_WALK)
+                if (outcome.colaborador == st.colaborador && outcome.ultimaOrdenColaborador == act_CLB_WALK)
                 {
                     outcome = st;
                 }
@@ -150,7 +150,7 @@ state apply(const Action & a, const state & st, const vector<vector<unsigned cha
 	    	}
 	    break;
 	    case actTURN_L:
-	    	outcome.jugador.brujula = static_cast<Orientacion>((outcome.jugador.brujula+6)%8);
+	    	outcome.jugador.brujula = (Orientacion)((outcome.jugador.brujula + 6) % 8);
             outcome.colaborador = applyLastAction(outcome, mapa, outcome.bikini_c, outcome.zapatillas_c);
             if (outcome.colaborador == st.colaborador && outcome.ultimaOrdenColaborador == act_CLB_WALK)
             {
@@ -158,7 +158,7 @@ state apply(const Action & a, const state & st, const vector<vector<unsigned cha
             }
 	    break;
 	    case actTURN_SR:
-	    	outcome.jugador.brujula = static_cast<Orientacion>((outcome.jugador.brujula+1)%8);
+	    	outcome.jugador.brujula = (Orientacion)((outcome.jugador.brujula + 1) % 8);
             outcome.colaborador = applyLastAction(outcome, mapa, outcome.bikini_c, outcome.zapatillas_c);
             if (outcome.colaborador == st.colaborador && outcome.ultimaOrdenColaborador == act_CLB_WALK)
             {
@@ -194,7 +194,7 @@ state apply(const Action & a, const state & st, const vector<vector<unsigned cha
 	    	}
         break;
         case act_CLB_TURN_SR:
-            outcome.colaborador.brujula = static_cast<Orientacion>((outcome.colaborador.brujula+1)%8);
+            outcome.colaborador.brujula = (Orientacion)((outcome.colaborador.brujula+1)%8);
             outcome.ultimaOrdenColaborador = act_CLB_TURN_SR;
         break;
         case act_CLB_STOP:
@@ -207,18 +207,18 @@ state apply(const Action & a, const state & st, const vector<vector<unsigned cha
 
 /**
  * @brief Inicializa a cero todos los elementos de una matriz
- * @param matriz 
+ * @param matriz Matriz a inicializar
  */
-void AnulaMatriz(vector<vector<unsigned char> > &matriz){
+void AnulaMatriz(vector<vector<unsigned char>> & matriz){
 	for (int i = 0; i < matriz.size(); i++)
-		for (int j = 0; j < matriz[0].size(); j++)
+		for (int j = 0; j < matriz[i].size(); j++)
 			matriz[i][j] = 0;
 }
 
 /**
- * @brief Permite pintar sobre el mapa del simulador el plan partiendo desde el estado st
- * @param st 
- * @param plan 
+ * @brief Método que permite pintar sobre el mapa del simulador el plan partiendo desde un estado
+ * @param st Estado base
+ * @param plan Plan a imprimir en el mapa
  */
 void ComportamientoJugador::VisualizaPlan(const state &st, const list<Action> &plan)
 {
@@ -228,7 +228,7 @@ void ComportamientoJugador::VisualizaPlan(const state &st, const list<Action> &p
 	auto it = plan.begin();
 	while (it != plan.end())
 	{
-		if ((*it != act_CLB_WALK) and (*it != act_CLB_TURN_SR) and (*it != act_CLB_STOP))
+		if ((*it != act_CLB_WALK) && (*it != act_CLB_TURN_SR) && (*it != act_CLB_STOP))
 		{
 			switch (cst.ultimaOrdenColaborador)
 			{
@@ -278,8 +278,8 @@ void ComportamientoJugador::VisualizaPlan(const state &st, const list<Action> &p
 }
 
 /**
- * @brief 
- * @param plan 
+ * @brief Método que representa por pantalla el plan a realizar
+ * @param plan Plan a realizar
  */
 void PintaPlan(const list<Action> &plan)
 {
@@ -304,21 +304,21 @@ void PintaPlan(const list<Action> &plan)
 }
 
 /**
- * @brief Implementación del algoritmo Búsqueda en Anchura para 
- * @param inicio 
- * @param final 
- * @param mapa 
- * @return 
+ * @brief Implementación del algoritmo Búsqueda en Anchura para el jugador
+ * @param start Estado base
+ * @param goal Objetivo a alcanzar
+ * @param map Mapa de casillas
+ * @return Plan a realizar para alcanzar el objetivo
  */
-list<Action> AgentBreadthFirstSearch(const state &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa)
+list<Action> AgentBreadthFirstSearch(const state & start, const ubicacion & goal, const vector<vector<unsigned char>> & map)
 {
 	nodeN0 current_node;
 	list<nodeN0> frontier;
 	set<nodeN0> explored;
     list<Action> plan;
 
-    current_node.st = inicio;
-    bool SolutionFound = (current_node.st.jugador.f == final.f && current_node.st.jugador.c == final.c);
+    current_node.st = start;
+    bool SolutionFound = (current_node.st.jugador.f == goal.f && current_node.st.jugador.c == goal.c);
 
 	frontier.push_back(current_node);
 
@@ -329,9 +329,9 @@ list<Action> AgentBreadthFirstSearch(const state &inicio, const ubicacion &final
 
         // Generar hijo actWALK
         nodeN0 child_walk = current_node;
-        child_walk.st = apply(actWALK, current_node.st, mapa);
+        child_walk.st = apply(actWALK, current_node.st, map);
         child_walk.secuencia.push_back(actWALK);
-		if (child_walk.st.jugador.f == final.f && child_walk.st.jugador.c == final.c)
+		if (child_walk.st.jugador.f == goal.f && child_walk.st.jugador.c == goal.c)
         {
 			current_node = child_walk;
 			SolutionFound = true;
@@ -345,9 +345,9 @@ list<Action> AgentBreadthFirstSearch(const state &inicio, const ubicacion &final
         {
 			// Generar hijo actRUN
 			nodeN0 child_run = current_node;
-            child_run.st = apply(actRUN, current_node.st, mapa);
+            child_run.st = apply(actRUN, current_node.st, map);
             child_run.secuencia.push_back(actRUN);
-			if (child_run.st.jugador.f == final.f && child_run.st.jugador.c == final.c)
+			if (child_run.st.jugador.f == goal.f && child_run.st.jugador.c == goal.c)
             {
 				current_node = child_run;
 				SolutionFound = true;
@@ -362,7 +362,7 @@ list<Action> AgentBreadthFirstSearch(const state &inicio, const ubicacion &final
         {
 			// Generar hijo actTURN_L
 			nodeN0 child_turnl = current_node;
-            child_turnl.st = apply(actTURN_L, current_node.st, mapa);
+            child_turnl.st = apply(actTURN_L, current_node.st, map);
             child_turnl.secuencia.push_back(actTURN_L);
 			if (explored.find(child_turnl) == explored.end())
             {
@@ -370,7 +370,7 @@ list<Action> AgentBreadthFirstSearch(const state &inicio, const ubicacion &final
 			}		
 			// Generar hijo actTURN_SR
 			nodeN0 child_turnsr = current_node;
-            child_turnsr.st = apply(actTURN_SR, current_node.st, mapa);
+            child_turnsr.st = apply(actTURN_SR, current_node.st, map);
             child_turnsr.secuencia.push_back(actTURN_SR);
 			if (explored.find(child_turnsr) == explored.end())
             {
@@ -401,10 +401,10 @@ list<Action> AgentBreadthFirstSearch(const state &inicio, const ubicacion &final
 }
 
 /**
- * @brief 
- * @param st 
- * @param sq 
- * @return 
+ * @brief Método que nos indica si una cierta casilla es visible por el jugador
+ * @param st Estado base
+ * @param sq Ubicación de la casilla en el mapa
+ * @return True si es visible, False en caso contrario
  */
 bool squareInSight(const state & st, const ubicacion & sq)
 {
@@ -456,11 +456,11 @@ bool squareInSight(const state & st, const ubicacion & sq)
 }
 
 /**
- * @brief Implementación del algoritmo Búsqueda en Anchura
- * @param inicio 
- * @param final 
- * @param mapa 
- * @return 
+ * @brief Implementación del algoritmo Búsqueda en Anchura para el colaborador
+ * @param start Estado base
+ * @param goal Objetivo a alcanzar
+ * @param map Mapa de casillas
+ * @return Plan a realizar para alcanzar el objetivo
  */
 list<Action> ColaboratorBreadthFirstSearch(const state &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa)
 {
@@ -590,12 +590,12 @@ list<Action> ColaboratorBreadthFirstSearch(const state &inicio, const ubicacion 
 }
 
 /**
- * @brief 
- * @param a 
- * @param st 
- * @param map 
- * @param player 
- * @return 
+ * @brief Método que devuelve el coste de realizar una cierta acción
+ * @param a Acción a realizar
+ * @param st Estado base
+ * @param map Mapa de casillas
+ * @param player Informa si la acción la realiza el jugador
+ * @return Coste de la acción en función de la casilla en que se encuentre el agente
  */
 int actionCost(const Action & a, const state & st, const vector<vector<unsigned char>> & map, bool player)
 {
@@ -666,24 +666,24 @@ int actionCost(const Action & a, const state & st, const vector<vector<unsigned 
 }
 
 /**
- * @brief Implementación del Algoritmo de Coste Uniforme
- * @param inicio 
- * @param final 
- * @param mapa 
- * @return 
+ * @brief Implementación del Algoritmo de Coste Uniforme para el jugador
+ * @param start Estado base
+ * @param goal Objetivo a alcanzar
+ * @param map Mapa de casillas
+ * @return Plan a realizar para alcanzar el objetivo
  */
-list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final, const vector<vector<unsigned char>> &map)
+list<Action> AgentUniformCostSearch(const state & start, const ubicacion & goal, const vector<vector<unsigned char>> & map)
 {
 	nodeN2 current_node;
 	priority_queue<nodeN2> frontier;
 	set<state> explored;
     list<Action> plan;
 
-    current_node.st = inicio;
+    current_node.st = start;
     current_node.accumulated_cost = 0;
     
     bool player = true;
-    bool solution_found = (current_node.st.jugador.f == final.f && current_node.st.jugador.c == final.c);
+    bool solution_found = (current_node.st.jugador.f == goal.f && current_node.st.jugador.c == goal.c);
 
 	frontier.push(current_node);
 
@@ -692,7 +692,7 @@ list<Action> AgentUniformCostSearch(const state &inicio, const ubicacion &final,
 		frontier.pop();
         explored.insert(current_node.st);
 
-        if (current_node.st.jugador.f == final.f && current_node.st.jugador.c == final.c)
+        if (current_node.st.jugador.f == goal.f && current_node.st.jugador.c == goal.c)
         {
             solution_found = true;
         }
@@ -770,10 +770,10 @@ int measureDistance(const ubicacion & sq1, const ubicacion & sq2)
 }
 
 /**
- * @brief 
- * @param u 
- * @param goal 
- * @return 
+ * @brief Método que calcula la función de la heurística para el algoritmo A*
+ * @param u Ubicación de la casilla a calcular la heurística
+ * @param goal Ubicación de la casilla objetivo
+ * @return Valor de la heurística
  */
 int heuristicCost(const ubicacion & u, const ubicacion & goal)
 {
@@ -781,10 +781,10 @@ int heuristicCost(const ubicacion & u, const ubicacion & goal)
 }
 
 /**
- * @brief 
- * @param st 
- * @param map 
- * @return 
+ * @brief Método que calcula el coste de la última órde que se le dió al colaborador
+ * @param st Estado base
+ * @param map Mapa de casillas
+ * @return Coste de realizar la acción del colaborador
  */
 int lastActionCost(const state & st, const vector<vector<unsigned char>> & map)
 {
@@ -793,13 +793,13 @@ int lastActionCost(const state & st, const vector<vector<unsigned char>> & map)
 }
 
 /**
- * @brief Implementación del Algoritmo A* para 
- * @param inicio 
- * @param final 
- * @param mapa 
- * @return 
+ * @brief Implementación del Algoritmo A* para el colaborador
+ * @param start Estado base
+ * @param goal Objetivo a alcanzar
+ * @param map Mapa de casillas
+ * @return Plan a realizar para alcanzar el objetivo
  */
-list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, const vector<vector<unsigned char>> &map)
+list<Action> ColaboratorAStarSearch(const state & start, const ubicacion & goal, const vector<vector<unsigned char>> & map)
 {
 	nodeN3 current_node;
 	priority_queue<nodeN3> frontier;
@@ -938,11 +938,11 @@ list<Action> ColaboratorAStarSearch(const state &start, const ubicacion &goal, c
 }
 
 /**
- * @brief Implementación del Algoritmo A*
- * @param inicio 
- * @param final 
- * @param mapa 
- * @return 
+ * @brief Implementación del Algoritmo A* para el jugador
+ * @param start Estado base
+ * @param goal Objetivo a alcanzar
+ * @param map Mapa de casillas
+ * @return Plan a realizar para alcanzar el objetivo
  */
 list<Action> AgentAStarSearch(const state &start, const ubicacion &goal, const vector<vector<unsigned char>> &map)
 {
@@ -1037,12 +1037,12 @@ list<Action> AgentAStarSearch(const state &start, const ubicacion &goal, const v
 
 
 /**
- * @brief Implementación del Algoritmo A* para
- * @param start
- * @param map 
- * @return 
+ * @brief Implementación del Algoritmo A* para que el jugador alcance al colaborador
+ * @param start Estado base
+ * @param map Mapa de casillas
+ * @return Plan a realizar para alcanzar el objetivo
  */
-list<Action> GoToColaboratorAStarSearch(const state &start, const vector<vector<unsigned char>> &map)
+list<Action> GoToColaboratorAStarSearch(const state & start, const vector<vector<unsigned char>> & map)
 {
 	nodeN3 current_node;
 	priority_queue<nodeN3> frontier;
@@ -1134,13 +1134,13 @@ list<Action> GoToColaboratorAStarSearch(const state &start, const vector<vector<
 }
 
 /**
- * @brief Implementación del Algoritmo A* para
- * @param start 
- * @param goal 
- * @param map
- * @return 
+ * @brief Implementación del Algoritmo A* para sólamente acciones del colaborador
+ * @param start Estado base
+ * @param goal Objetivo a alcanzar
+ * @param map Mapa de casillas
+ * @return Plan a realizar para alcanzar el objetivo
  */
-list<Action> OnlyColaboratorAStarSearch(const state &start, const ubicacion &goal, const vector<vector<unsigned char>> &map, bool & success)
+list<Action> OnlyColaboratorAStarSearch(const state &start, const ubicacion &goal, const vector<vector<unsigned char>> &map)
 {
     int counter = 0;
 	nodeN3 current_node;
@@ -1209,10 +1209,6 @@ list<Action> OnlyColaboratorAStarSearch(const state &start, const ubicacion &goa
         plan = current_node.secuencia;
         //cout << "Encontrado un plan: ";
         //PintaPlan(plan);
-    }
-    else
-    {
-        success = true;
     }
 	
 	return plan;
@@ -1414,7 +1410,7 @@ Action ComportamientoJugador::think(Sensores sensores)
         if (!need_reload && !goto_colaborator && !move_colaborator && 0 < measureDistance(current_state.colaborador, goal) && measureDistance(current_state.colaborador, goal) < 5)
         {
             plan = GoToColaboratorAStarSearch(current_state, mapaResultado);
-            clb_plan = OnlyColaboratorAStarSearch(current_state, goal, mapaResultado, force_player);
+            clb_plan = OnlyColaboratorAStarSearch(current_state, goal, mapaResultado);
             if (plan.size() > 0)
             {
                 VisualizaPlan(current_state, plan);
@@ -1480,7 +1476,7 @@ Action ComportamientoJugador::think(Sensores sensores)
             else if (clb_plan.front() == act_CLB_WALK && !accesibleSquare(clb_next_square, mapaResultado) && clb_next_square.f != current_state.jugador.f && clb_next_square.c != current_state.jugador.c)
             {
                 action = act_CLB_STOP;
-                clb_plan = OnlyColaboratorAStarSearch(current_state, goal, mapaResultado, force_player);
+                clb_plan = OnlyColaboratorAStarSearch(current_state, goal, mapaResultado);
                 if (clb_plan.size() > 0)
                 {
                     VisualizaPlan(current_state, clb_plan);
@@ -1519,7 +1515,7 @@ Action ComportamientoJugador::think(Sensores sensores)
 }
 
 /**
- * @brief Método que detecta si nos encontramos cerca de un posicionamineto
+ * @brief Método que detecta si nos encontramos cerca de mucho bosque
  * @param terreno Sensores de terreno
  * @return True si lo estamos, False en caso contrario
  */
@@ -1535,7 +1531,7 @@ bool ComportamientoJugador::detectForest(const vector<unsigned char> & terreno)
 }
 
 /**
- * @brief Método que detecta si nos encontramos cerca de un posicionamineto
+ * @brief Método que detecta si nos encontramos cerca de mucho agua
  * @param terreno Sensores de terreno
  * @return True si lo estamos, False en caso contrario
  */

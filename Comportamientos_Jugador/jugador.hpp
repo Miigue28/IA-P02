@@ -177,7 +177,6 @@ class ComportamientoJugador : public Comportamiento {
         need_replan = false;
         seen_reload = false;
         goto_colaborator = false;
-        force_player = false;
         need_reload = false;
         move_colaborator = false;
     }
@@ -214,9 +213,8 @@ class ComportamientoJugador : public Comportamiento {
     list<Action> plan;
     list<Action> clb_plan;
     bool seen_reload;
-    bool goto_colaborator;
     bool need_reload;
-    bool force_player;
+    bool goto_colaborator;
     bool move_colaborator;
     void printCliffs();
 };
